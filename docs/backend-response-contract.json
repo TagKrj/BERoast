@@ -1,0 +1,270 @@
+{
+  "authGithubCallback": {
+    "success": true,
+    "message": "Authenticated successfully",
+    "data": {
+      "accessToken": "<jwt-access-token>",
+      "refreshToken": "<opaque-refresh-token>",
+      "user": {
+        "id": "665f0e2a8c5d5b9b4f3a1111",
+        "name": "TagKrj",
+        "email": "tagkrj@example.com",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/1234567?v=4",
+        "github": {
+          "id": "1234567",
+          "username": "TagKrj",
+          "displayName": "Tag Krj",
+          "email": "tagkrj@example.com",
+          "avatarUrl": "https://avatars.githubusercontent.com/u/1234567?v=4",
+          "profileUrl": "https://github.com/TagKrj"
+        }
+      }
+    }
+  },
+  "getMe": {
+    "success": true,
+    "data": {
+      "user": {
+        "id": "665f0e2a8c5d5b9b4f3a1111",
+        "name": "TagKrj",
+        "email": "tagkrj@example.com",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/1234567?v=4",
+        "githubUsername": "TagKrj"
+      }
+    }
+  },
+  "checkRepositorySmallOrMedium": {
+    "success": true,
+    "message": "Repository checked successfully",
+    "data": {
+      "roastId": "665f0f818c5d5b9b4f3a2222",
+      "repository": {
+        "owner": "TagKrj",
+        "name": "UTTQ_Web",
+        "fullName": "TagKrj/UTTQ_Web",
+        "htmlUrl": "https://github.com/TagKrj/UTTQ_Web",
+        "defaultBranch": "main"
+      },
+      "check": {
+        "fileCount": 1220,
+        "totalBytes": 3848291,
+        "sizeLabel": "small",
+        "sizeDisplay": "Small",
+        "sizeReason": "Gemini classified this repository as small based on file count, total size, and language mix.",
+        "gptKeyRequired": false,
+        "nextAction": "analyze_with_system_gemini"
+      }
+    }
+  },
+  "checkRepositoryLarge": {
+    "success": true,
+    "message": "Repository checked successfully",
+    "data": {
+      "roastId": "665f0f818c5d5b9b4f3a3333",
+      "repository": {
+        "owner": "TagKrj",
+        "name": "UTTQ_Web",
+        "fullName": "TagKrj/UTTQ_Web",
+        "htmlUrl": "https://github.com/TagKrj/UTTQ_Web",
+        "defaultBranch": "main"
+      },
+      "check": {
+        "fileCount": 1220,
+        "totalBytes": 28348291,
+        "sizeLabel": "large",
+        "sizeDisplay": "Large",
+        "sizeReason": "Gemini classified this repository as large because the file count and estimated token volume are high.",
+        "gptKeyRequired": true,
+        "nextAction": "provide_openai_api_key"
+      },
+      "advice": "Use a personal OpenAI API key to improve analysis quality for large repositories."
+    }
+  },
+  "analyzeRepository": {
+    "success": true,
+    "message": "Repository analyzed successfully",
+    "data": {
+      "roast": {
+        "id": "665f0f818c5d5b9b4f3a2222",
+        "roastDate": "2025-03-24T00:00:00.000Z",
+        "roastDateDisplay": "24/3/2025",
+        "repository": {
+          "owner": "TagKrj",
+          "name": "UTTQ_Web",
+          "fullName": "TagKrj/UTTQ_Web",
+          "htmlUrl": "https://github.com/TagKrj/UTTQ_Web"
+        },
+        "grade": "B+",
+        "score": 84,
+        "summaryTitle": "Good structure with several maintainability issues",
+        "shortReview": [
+          "The project has a clear module layout, but several files combine too many responsibilities.",
+          "Error handling is present in some paths, while validation is inconsistent around external input.",
+          "Security risk is moderate because secrets are not exposed, but dependency and request validation should be tightened."
+        ],
+        "repoInfo": {
+          "fileCount": 1220,
+          "sizeLabel": "small",
+          "totalCodeSmell": 3,
+          "totalSecurity": 2,
+          "analysisType": "system_gemini"
+        },
+        "issues": {
+          "codeSmells": [
+            {
+              "index": 1,
+              "fileName": "src/services/repoAnalyzer.service.js",
+              "filePath": "src/services/repoAnalyzer.service.js",
+              "title": "Large function with mixed responsibilities",
+              "description": "The function fetches repository data, parses files, builds prompts, and formats the response in one place.",
+              "startLine": 42,
+              "endLine": 118,
+              "severity": "medium"
+            },
+            {
+              "index": 2,
+              "fileName": "src/controllers/roast.controller.js",
+              "filePath": "src/controllers/roast.controller.js",
+              "title": "Controller contains business logic",
+              "description": "The controller directly prepares analysis rules instead of delegating that work to the service layer.",
+              "startLine": 19,
+              "endLine": 57,
+              "severity": "low"
+            }
+          ],
+          "security": [
+            {
+              "index": 1,
+              "fileName": "src/routes/roast.routes.js",
+              "filePath": "src/routes/roast.routes.js",
+              "title": "Missing rate limit for analysis endpoint",
+              "description": "The analysis endpoint can trigger expensive AI calls and should have a stricter per-user rate limit.",
+              "startLine": 8,
+              "endLine": 15,
+              "severity": "high"
+            },
+            {
+              "index": 2,
+              "fileName": "src/services/github.service.js",
+              "filePath": "src/services/github.service.js",
+              "title": "Repository URL is not normalized before use",
+              "description": "The service should validate and normalize GitHub URLs before fetching remote content.",
+              "startLine": 31,
+              "endLine": 45,
+              "severity": "medium"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "analyzeRepositoryLargeWithoutOpenAIKey": {
+    "success": false,
+    "message": "Personal OpenAI API key is required for large repositories.",
+    "error": {
+      "code": "OPENAI_API_KEY_REQUIRED",
+      "details": {
+        "roastId": "665f0f818c5d5b9b4f3a3333",
+        "sizeLabel": "large",
+        "requiredProvider": "openai"
+      }
+    }
+  },
+  "historyList": {
+    "success": true,
+    "data": {
+      "items": [
+        {
+          "roastId": "665f0f818c5d5b9b4f3a2222",
+          "grade": "A",
+          "repositoryFullName": "TagKrj/UTTQ_Web",
+          "repositoryUrl": "https://github.com/TagKrj/UTTQ_Web",
+          "roastDate": "2026-04-23T00:00:00.000Z",
+          "roastDateDisplay": "23/4/2026",
+          "sizeLabel": "small",
+          "totalCodeSmell": 1,
+          "totalSecurity": 0
+        },
+        {
+          "roastId": "665f0f818c5d5b9b4f3a3333",
+          "grade": "B",
+          "repositoryFullName": "TagKrj/UTTQ_Web",
+          "repositoryUrl": "https://github.com/TagKrj/UTTQ_Web",
+          "roastDate": "2026-04-20T00:00:00.000Z",
+          "roastDateDisplay": "20/4/2026",
+          "sizeLabel": "large",
+          "totalCodeSmell": 8,
+          "totalSecurity": 3
+        }
+      ],
+      "pagination": {
+        "page": 1,
+        "limit": 10,
+        "total": 2,
+        "totalPages": 1
+      }
+    }
+  },
+  "historyDetail": {
+    "success": true,
+    "data": {
+      "roast": {
+        "id": "665f0f818c5d5b9b4f3a2222",
+        "roastDate": "2025-03-24T00:00:00.000Z",
+        "roastDateDisplay": "24/3/2025",
+        "repository": {
+          "fullName": "TagKrj/UTTQ_Web",
+          "htmlUrl": "https://github.com/TagKrj/UTTQ_Web"
+        },
+        "grade": "B+",
+        "summaryTitle": "Good structure with several maintainability issues",
+        "shortReview": [
+          "The project is readable but needs clearer separation of controller and service logic.",
+          "Validation and rate limiting should be tightened for AI-heavy endpoints.",
+          "Security issues are manageable and mostly concentrated around request boundaries."
+        ],
+        "repoInfo": {
+          "fileCount": 1220,
+          "sizeLabel": "small",
+          "totalCodeSmell": 3,
+          "totalSecurity": 2,
+          "analysisType": "system_gemini"
+        },
+        "issues": {
+          "codeSmells": [],
+          "security": []
+        }
+      }
+    }
+  },
+  "commonErrors": {
+    "invalidGithubRepoUrl": {
+      "success": false,
+      "message": "Invalid GitHub repository URL.",
+      "error": {
+        "code": "INVALID_GITHUB_REPO_URL"
+      }
+    },
+    "repositoryNotPublic": {
+      "success": false,
+      "message": "Repository must be public.",
+      "error": {
+        "code": "REPOSITORY_NOT_PUBLIC"
+      }
+    },
+    "roastNotFound": {
+      "success": false,
+      "message": "Roast report not found.",
+      "error": {
+        "code": "ROAST_NOT_FOUND"
+      }
+    },
+    "analysisFailed": {
+      "success": false,
+      "message": "Analysis failed. Please try again.",
+      "error": {
+        "code": "ANALYSIS_FAILED"
+      }
+    }
+  }
+}

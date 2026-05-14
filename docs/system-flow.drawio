@@ -1,0 +1,178 @@
+<mxfile host="app.diagrams.net" modified="2026-05-14T00:00:00.000Z" agent="Codex" version="24.7.17" type="device">
+  <diagram id="roastvn-system-flow" name="RoastVN System Flow">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1800" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#2E7D32;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="120" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="login" value="User clicks Sign in with GitHub" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="240" y="90" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="githubOAuth" value="GitHub OAuth authorizes user" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#EF6C00;" vertex="1" parent="1">
+          <mxGeometry x="500" y="90" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="upsertUser" value="Backend upserts user profile in MongoDB" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;" vertex="1" parent="1">
+          <mxGeometry x="760" y="90" width="210" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="dashboard" value="Frontend shows dashboard with GitHub profile" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="90" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="pasteRepo" value="User pastes public GitHub repo URL and clicks Check" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="1320" y="90" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="validateRepo" value="Backend validates URL and repository visibility" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#F9A825;" vertex="1" parent="1">
+          <mxGeometry x="120" y="250" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="invalidRepo" value="Return validation error" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#C62828;" vertex="1" parent="1">
+          <mxGeometry x="120" y="370" width="180" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="fetchMeta" value="Fetch repo metadata, file count, and estimated bytes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#F9A825;" vertex="1" parent="1">
+          <mxGeometry x="420" y="250" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="classifySize" value="Gemini classifies repo size: small, medium, or large" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#F9A825;" vertex="1" parent="1">
+          <mxGeometry x="730" y="250" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="saveCheck" value="Save repository and checked roast run" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="250" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="largeDecision" value="Is repository large?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#00695C;" vertex="1" parent="1">
+          <mxGeometry x="1340" y="235" width="160" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="requireKey" value="Frontend asks for user's OpenAI API key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="1210" y="420" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="keyDecision" value="OpenAI key provided?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#00695C;" vertex="1" parent="1">
+          <mxGeometry x="1510" y="405" width="160" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="keyRequiredError" value="Return OPENAI_API_KEY_REQUIRED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#C62828;" vertex="1" parent="1">
+          <mxGeometry x="1510" y="560" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="analyzeOpenAI" value="Analyze with user's OpenAI key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#F9A825;" vertex="1" parent="1">
+          <mxGeometry x="1130" y="560" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="analyzeGemini" value="Analyze with system Gemini key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFDE7;strokeColor=#F9A825;" vertex="1" parent="1">
+          <mxGeometry x="790" y="420" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="deleteSource" value="Source code is removed after analysis and is not stored" style="shape=note;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#616161;" vertex="1" parent="1">
+          <mxGeometry x="760" y="560" width="250" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="persistReport" value="Persist report summary in roast_runs and issues in roast_issues" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;" vertex="1" parent="1">
+          <mxGeometry x="420" y="560" width="250" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="returnReport" value="Return roast report to frontend" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="120" y="570" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="historyStart" value="User opens History" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="120" y="760" width="190" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="loadHistory" value="Backend loads completed roast list by userId" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;" vertex="1" parent="1">
+          <mxGeometry x="390" y="755" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="selectRoast" value="User selects a roast item" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="710" y="760" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="loadDetail" value="Backend loads roast_runs plus grouped roast_issues" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#6A1B9A;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="755" width="250" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="returnDetail" value="Return saved report detail" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;" vertex="1" parent="1">
+          <mxGeometry x="1330" y="760" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mongodb" value="MongoDB collections: users, repositories, roast_runs, roast_issues" style="shape=cylinder3d;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#F3E5F5;strokeColor=#6A1B9A;" vertex="1" parent="1">
+          <mxGeometry x="740" y="930" width="300" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="start" target="login" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="login" target="githubOAuth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="githubOAuth" target="upsertUser" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="upsertUser" target="dashboard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="dashboard" target="pasteRepo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="pasteRepo" target="validateRepo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1435" y="205" />
+              <mxPoint x="230" y="205" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" value="Invalid or private" edge="1" parent="1" source="validateRepo" target="invalidRepo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="Valid public repo" edge="1" parent="1" source="validateRepo" target="fetchMeta" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="fetchMeta" target="classifySize" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="classifySize" target="saveCheck" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="saveCheck" target="largeDecision" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="Yes" edge="1" parent="1" source="largeDecision" target="requireKey" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" value="No" edge="1" parent="1" source="largeDecision" target="analyzeGemini" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="requireKey" target="keyDecision" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" value="No" edge="1" parent="1" source="keyDecision" target="keyRequiredError" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e16" value="Yes" edge="1" parent="1" source="keyDecision" target="analyzeOpenAI" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e17" edge="1" parent="1" source="analyzeOpenAI" target="deleteSource" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e18" edge="1" parent="1" source="analyzeGemini" target="deleteSource" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e19" edge="1" parent="1" source="deleteSource" target="persistReport" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e20" edge="1" parent="1" source="persistReport" target="returnReport" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e21" edge="1" parent="1" source="historyStart" target="loadHistory" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e22" edge="1" parent="1" source="loadHistory" target="selectRoast" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" edge="1" parent="1" source="selectRoast" target="loadDetail" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e24" edge="1" parent="1" source="loadDetail" target="returnDetail" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e25" edge="1" parent="1" source="upsertUser" target="mongodb" style="dashed=1;edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e26" edge="1" parent="1" source="persistReport" target="mongodb" style="dashed=1;edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e27" edge="1" parent="1" source="loadHistory" target="mongodb" style="dashed=1;edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e28" edge="1" parent="1" source="loadDetail" target="mongodb" style="dashed=1;edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+

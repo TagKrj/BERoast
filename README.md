@@ -42,6 +42,7 @@ Meaning of this snapshot:
 * `src/app.js` is responsible for wiring middleware, routes, and the global error handler.
 * `src/server.js` is the application entry point.
 * `src/config/db.js` handles MongoDB connection logic.
+* `src/config/swagger.js` defines the OpenAPI document used by Swagger UI.
 * `src/middlewares/error.middleware.js` centralizes error handling.
 * `controllers`, `routes`, `models`, and `services` are architecture layers waiting for feature implementation.
 
@@ -236,6 +237,20 @@ Current `package.json` scripts:
 
 * `npm run dev` -> runs `nodemon src/server.js`
 * `npm start` -> runs `node src/server.js`
+
+## API Docs
+
+Swagger UI is exposed from `server.js` at:
+
+* `http://localhost:5000/api-docs` by default
+
+If you change `PORT`, the docs URL follows that port automatically.
+
+Notes for Swagger testing:
+
+* Use the JSON response of `GET /api/auth/github` when testing in Swagger UI.
+* Set `redirect=false` in Swagger UI. `redirect=true` is meant for direct browser navigation.
+* The docs now include example payloads and usage notes directly in the route files.
 
 Once the backend is fully bootstrapped, these two scripts should remain the standard execution paths.
 
