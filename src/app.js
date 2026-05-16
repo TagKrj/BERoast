@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.routes.js';
+import repoRoutes from './routes/repo.routes.js';
+import roastRoutes from './routes/roast.routes.js';
 import errorMiddleware from './middlewares/error.middleware.js';
 
 const app = express();
@@ -38,10 +40,7 @@ app.use(limiter);
 
 /**
  * @openapi
-    origin:
-      process.env.CLIENT_ORIGIN ||
-      process.env.CLIENT_URL ||
-      'http://localhost:5173',
+ * /api/health:
  *   get:
  *     tags:
  *       - Health
@@ -72,6 +71,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 app.use('/api/auth', authRoutes);
+app.use('/api/repos', repoRoutes);
+app.use('/api/roasts', roastRoutes);
 
 // Error middleware
 app.use(errorMiddleware);

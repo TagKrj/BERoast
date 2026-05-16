@@ -40,6 +40,14 @@ const swaggerSpec = swaggerJsdoc({
 				name: 'Auth',
 				description: 'GitHub OAuth authentication endpoints',
 			},
+			{
+				name: 'Repos',
+				description: 'Repository validation endpoints',
+			},
+			{
+				name: 'Roasts',
+				description: 'Repository analysis endpoints',
+			},
 		],
 		components: {
 			securitySchemes: {
