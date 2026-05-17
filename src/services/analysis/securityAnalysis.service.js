@@ -7,7 +7,7 @@ import { loadRuleFile } from './ruleLoader.service.js';
 
 const getFileName = (filePath) => filePath.split('/').pop() || filePath;
 const DETECTION_BATCH_SIZE = Number.parseInt(
-  process.env.ANALYSIS_DETECTION_BATCH_SIZE || '4',
+  process.env.ANALYSIS_DETECTION_BATCH_SIZE || '8',
   10,
 );
 

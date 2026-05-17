@@ -328,3 +328,26 @@ export const getRoastReportDetail = async ({ roastId, userId }) => {
     security: issues.filter((issue) => issue.type === 'security'),
   });
 };
+
+export const deleteRoastReport = async ({ roastId, userId }) => {
+  const roastRun = await RoastRun.findOne({
+    _id: roastId,
+    userId,
+    status: 'completed',
+  });
+
+  if (!roastRun?.result) {
+    throw new AppError('Roast report not found.', 404, 'ROAST_NOT_FOUND');
+  }
+
+  await RoastIssue.deleteMany({ roastRunId: roastRun._id, userId });
+  await RoastRun.deleteOne({ _id: roastRun._id, userId });
+
+  return {
+    roastId: roastRun.id,
+    repositoryFullName: roastRun.repoSnapshot.fullName,
+    repositoryUrl: roastRun.repoSnapshot.htmlUrl,
+    roastDate: roastRun.result.roastDate.toISOString(),
+    roastDateDisplay: roastRun.result.roastDateDisplay,
+  };
+};

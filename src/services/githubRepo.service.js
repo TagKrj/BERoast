@@ -46,9 +46,18 @@ const SKIP_PATH_PARTS = new Set([
   'vendor',
 ]);
 
-const MAX_FILE_BYTES_FOR_ANALYSIS = 90_000;
-const MAX_ANALYSIS_FILES = 35;
-const MAX_ANALYSIS_CHARS = 120_000;
+const MAX_FILE_BYTES_FOR_ANALYSIS = Number.parseInt(
+  process.env.MAX_FILE_BYTES_FOR_ANALYSIS || '90000',
+  10,
+);
+const MAX_ANALYSIS_FILES = Number.parseInt(
+  process.env.MAX_ANALYSIS_FILES || '8',
+  10,
+);
+const MAX_ANALYSIS_CHARS = Number.parseInt(
+  process.env.MAX_ANALYSIS_CHARS || '35000',
+  10,
+);
 
 const NON_REVIEWABLE_FILE_PATTERN =
   /\.(lock|min\.js|min\.css|map|png|jpg|jpeg|gif|webp|svg|ico|pdf|zip|tar|gz|rar|7z|mp4|mov|avi|mp3|wav|glb|gltf|fbx|obj|blend|ttf|otf|woff|woff2)$/i;

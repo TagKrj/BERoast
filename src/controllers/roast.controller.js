@@ -2,6 +2,7 @@ import { z } from 'zod';
 import mongoose from 'mongoose';
 import {
   analyzeCheckedRepository,
+  deleteRoastReport,
   getRoastHistory,
   getRoastReportDetail,
 } from '../services/roast.service.js';
@@ -87,6 +88,25 @@ export const getRoastDetail = asyncHandler(async (req, res) => {
     success: true,
     data: {
       roast,
+    },
+  });
+});
+
+export const deleteRoast = asyncHandler(async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.roastId)) {
+    throw new AppError('Roast report not found.', 404, 'ROAST_NOT_FOUND');
+  }
+
+  const deletedRoast = await deleteRoastReport({
+    roastId: req.params.roastId,
+    userId: req.user._id,
+  });
+
+  return res.json({
+    success: true,
+    message: 'Roast report deleted successfully',
+    data: {
+      roast: deletedRoast,
     },
   });
 });

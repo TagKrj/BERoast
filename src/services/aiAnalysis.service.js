@@ -1,6 +1,10 @@
 import AppError from '../utils/appError.js';
 import { analyzeCodeSmells } from './analysis/codeSmellAnalysis.service.js';
 import { analyzeSecurityIssues } from './analysis/securityAnalysis.service.js';
+import {
+  fallbackCodeSmells,
+  fallbackSecurityIssues,
+} from './analysis/localFallbackAnalysis.service.js';
 
 const SIZE_LIMITS = {
   small: {
@@ -126,6 +130,34 @@ const buildSummary = ({ metadata, codeSmells, security, score, grade }) => {
   };
 };
 
+const shouldUseLocalFallback = (provider, error) =>
+  provider === 'system_gemini' &&
+  (error.statusCode >= 500 ||
+    String(error.code || '').includes('GEMINI') ||
+    String(error.code || '').includes('JSON_INVALID'));
+
+const runAnalysisStep = async ({
+  run,
+  fallback,
+  provider,
+  codeSample,
+  fallbackModel,
+}) => {
+  try {
+    return await run();
+  } catch (error) {
+    if (!shouldUseLocalFallback(provider, error)) {
+      throw error;
+    }
+
+    return {
+      model: fallbackModel,
+      findings: fallback(codeSample),
+      fallbackReason: error.code || 'AI_PROVIDER_FAILED',
+    };
+  }
+};
+
 export const analyzeRepositoryCode = async ({
   metadata,
   codeSample,
@@ -140,10 +172,24 @@ export const analyzeRepositoryCode = async ({
     );
   }
 
-  const [codeSmellAnalysis, securityAnalysis] = await Promise.all([
-    analyzeCodeSmells({ codeSample, provider, openAiApiKey }),
-    analyzeSecurityIssues({ codeSample, provider, openAiApiKey }),
-  ]);
+  const fallbackModel =
+    provider === 'system_gemini'
+      ? 'local-fallback-after-gemini-failure'
+      : 'local-fallback';
+  const codeSmellAnalysis = await runAnalysisStep({
+    provider,
+    codeSample,
+    fallbackModel,
+    fallback: fallbackCodeSmells,
+    run: () => analyzeCodeSmells({ codeSample, provider, openAiApiKey }),
+  });
+  const securityAnalysis = await runAnalysisStep({
+    provider,
+    codeSample,
+    fallbackModel,
+    fallback: fallbackSecurityIssues,
+    run: () => analyzeSecurityIssues({ codeSample, provider, openAiApiKey }),
+  });
 
   const codeSmells = codeSmellAnalysis.findings;
   const security = securityAnalysis.findings;

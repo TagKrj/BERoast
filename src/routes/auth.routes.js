@@ -71,7 +71,9 @@ router.get('/github', getGithubAuthUrl);
  *     description: |
  *       GitHub sends the authorization code to this endpoint after the user approves login.
  *       Send the `code` query param from GitHub. The API exchanges the code for an access token,
- *       loads the GitHub profile, creates or updates the user, and returns a signed JWT.
+ *       loads the GitHub profile, creates or updates the user, and redirects the browser back to
+ *       the frontend callback URL with `accessToken` and `user` query params.
+ *       Add `response=json` only for Swagger/Postman debugging.
  *     parameters:
  *       - in: query
  *         name: code
@@ -80,9 +82,18 @@ router.get('/github', getGithubAuthUrl);
  *         schema:
  *           type: string
  *         example: abc123githubcode
+ *       - in: query
+ *         name: response
+ *         required: false
+ *         description: Set to `json` to receive the legacy JSON response instead of redirecting to the frontend.
+ *         schema:
+ *           type: string
+ *           enum: [json]
  *     responses:
+ *       302:
+ *         description: Authentication succeeded and browser redirected to the frontend callback.
  *       200:
- *         description: Authentication succeeded.
+ *         description: Authentication succeeded with JSON response when `response=json` is used.
  *         content:
  *           application/json:
  *             schema:

@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   analyzeRepo,
+  deleteRoast,
   getRoastDetail,
   listRoastHistory,
 } from '../controllers/roast.controller.js';
@@ -158,6 +159,46 @@ router.get('/history', authMiddleware, listRoastHistory);
  *         description: Server error
  */
 router.post('/:roastId/analyze', authMiddleware, analyzeRepo);
+
+/**
+ * @openapi
+ * /api/roasts/{roastId}:
+ *   delete:
+ *     tags:
+ *       - Roasts
+ *     summary: Delete a saved roast report
+ *     description: Deletes one completed roast report from the authenticated user's history, including its code smell and security issue rows. Use roastId from GET /api/roasts/history.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roastId
+ *         required: true
+ *         description: The roastId of the history item to delete.
+ *         schema:
+ *           type: string
+ *         example: 6a058c5c22f813fa54d72f64
+ *     responses:
+ *       200:
+ *         description: Roast report deleted successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: Roast report deleted successfully
+ *               data:
+ *                 roast:
+ *                   roastId: 6a058c5c22f813fa54d72f64
+ *                   repositoryFullName: TagKrj/UTTQ_Web
+ *                   repositoryUrl: https://github.com/TagKrj/UTTQ_Web
+ *                   roastDate: 2026-05-14T08:49:17.234Z
+ *                   roastDateDisplay: 14/5/2026
+ *       401:
+ *         description: Missing or invalid bearer token
+ *       404:
+ *         description: Roast report not found
+ */
+router.delete('/:roastId', authMiddleware, deleteRoast);
 
 /**
  * @openapi

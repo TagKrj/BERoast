@@ -237,6 +237,19 @@
       }
     }
   },
+  "deleteRoastReport": {
+    "success": true,
+    "message": "Roast report deleted successfully",
+    "data": {
+      "roast": {
+        "roastId": "665f0f818c5d5b9b4f3a2222",
+        "repositoryFullName": "TagKrj/UTTQ_Web",
+        "repositoryUrl": "https://github.com/TagKrj/UTTQ_Web",
+        "roastDate": "2026-04-23T00:00:00.000Z",
+        "roastDateDisplay": "23/4/2026"
+      }
+    }
+  },
   "commonErrors": {
     "invalidGithubRepoUrl": {
       "success": false,
