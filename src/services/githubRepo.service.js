@@ -35,16 +35,101 @@ const CODE_EXTENSIONS = new Set([
   '.md',
 ]);
 
-const SKIP_PATH_PARTS = new Set([
+const REVIEWABLE_FILE_NAMES = new Set([
+  '.env.example',
+  'Dockerfile',
+  'docker-compose.yml',
+  'docker-compose.yaml',
+]);
+
+const IGNORED_FOLDERS = new Set([
   'node_modules',
   '.git',
+  '.next',
+  '.nuxt',
   'dist',
   'build',
   'coverage',
-  '.next',
-  '.nuxt',
+  '.cache',
+  '.turbo',
+  '.parcel-cache',
+  'out',
+  'target',
+  'bin',
+  'obj',
   'vendor',
+  'Pods',
+  '.gradle',
+  '.mvn',
+  '.idea',
+  '.vscode',
+  'tmp',
+  'temp',
+  'logs',
+  'log',
+  'storybook-static',
+  '.output',
+  '.angular',
+  '__pycache__',
+  '.venv',
+  'venv',
+  '.pytest_cache',
+  '.mypy_cache',
+  'DerivedData',
+  '.build',
 ]);
+
+const IGNORED_FILE_NAMES = new Set([
+  '.DS_Store',
+  'DS_Store',
+  'npm-debug.log',
+  'yarn-error.log',
+  'package-lock.json',
+  'yarn.lock',
+  'pnpm-lock.yaml',
+  'bun.lockb',
+  'Cargo.lock',
+  'composer.lock',
+  'poetry.lock',
+]);
+
+const IGNORED_EXTENSIONS = new Set([
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.webp',
+  '.mp4',
+  '.mov',
+  '.mp3',
+  '.wav',
+  '.pdf',
+  '.zip',
+  '.tar',
+  '.gz',
+  '.rar',
+  '.7z',
+  '.exe',
+  '.dll',
+  '.so',
+  '.dylib',
+  '.svg',
+  '.ico',
+  '.map',
+  '.avi',
+  '.glb',
+  '.gltf',
+  '.fbx',
+  '.obj',
+  '.blend',
+  '.ttf',
+  '.otf',
+  '.woff',
+  '.woff2',
+  '.lock',
+]);
+
+const IGNORED_FILE_SUFFIXES = ['.min.js', '.min.css', 'bundle.js'];
 
 const MAX_FILE_BYTES_FOR_ANALYSIS = Number.parseInt(
   process.env.MAX_FILE_BYTES_FOR_ANALYSIS || '90000',
@@ -131,18 +216,78 @@ const getExtension = (filePath) => {
   return dot >= 0 ? fileName.slice(dot).toLowerCase() : '';
 };
 
+const getFileName = (filePath) => {
+  const lastSlash = filePath.lastIndexOf('/');
+  return lastSlash >= 0 ? filePath.slice(lastSlash + 1) : filePath;
+};
+
+const isAllowedHiddenPath = (pathParts) =>
+  pathParts[0] === '.github' && pathParts[1] === 'workflows';
+
+const isExplicitReviewableFile = (filePath) =>
+  REVIEWABLE_FILE_NAMES.has(getFileName(filePath));
+
+const isIgnoredRepositoryPath = (filePath) => {
+  if (!filePath) {
+    return true;
+  }
+
+  if (isExplicitReviewableFile(filePath)) {
+    return false;
+  }
+
+  const pathParts = filePath.split('/');
+  const fileName = getFileName(filePath);
+  const extension = getExtension(filePath);
+
+  if (IGNORED_FILE_NAMES.has(fileName)) {
+    return true;
+  }
+
+  if (
+    pathParts.some((part, index) => {
+      if (IGNORED_FOLDERS.has(part)) {
+        return true;
+      }
+
+      return (
+        part.startsWith('.') &&
+        !isAllowedHiddenPath(pathParts) &&
+        index < pathParts.length - 1
+      );
+    })
+  ) {
+    return true;
+  }
+
+  if (
+    fileName.startsWith('.') &&
+    !isAllowedHiddenPath(pathParts) &&
+    !isExplicitReviewableFile(filePath)
+  ) {
+    return true;
+  }
+
+  if (IGNORED_EXTENSIONS.has(extension)) {
+    return true;
+  }
+
+  return IGNORED_FILE_SUFFIXES.some((suffix) =>
+    fileName.toLowerCase().endsWith(suffix.toLowerCase()),
+  );
+};
+
 const isReviewableSourceFile = (file) => {
   if (file.type !== 'blob' || !file.path) {
     return false;
   }
 
-  const pathParts = file.path.split('/');
-  if (pathParts.some((part) => SKIP_PATH_PARTS.has(part))) {
+  if (isIgnoredRepositoryPath(file.path)) {
     return false;
   }
 
-  if (NON_REVIEWABLE_FILE_PATTERN.test(file.path)) {
-    return false;
+  if (isExplicitReviewableFile(file.path)) {
+    return true;
   }
 
   return CODE_EXTENSIONS.has(getExtension(file.path));
@@ -212,7 +357,11 @@ export const getRepositoryMetadata = async (repoUrl) => {
     'GITHUB_TREE_FETCH_FAILED',
   );
 
-  const files = tree.tree.filter((item) => item.type === 'blob');
+  const allFiles = tree.tree.filter((item) => item.type === 'blob');
+  const files = allFiles.filter((file) => !isIgnoredRepositoryPath(file.path));
+  const ignoredFiles = allFiles.filter((file) =>
+    isIgnoredRepositoryPath(file.path),
+  );
   const totalBytes = files.reduce((sum, file) => sum + (file.size || 0), 0);
   const reviewableStats = buildReviewableStats(files);
 
@@ -229,6 +378,11 @@ export const getRepositoryMetadata = async (repoUrl) => {
     stats: {
       fileCount: files.length,
       totalBytes,
+      ignoredFileCount: ignoredFiles.length,
+      ignoredBytes: ignoredFiles.reduce(
+        (sum, file) => sum + (file.size || 0),
+        0,
+      ),
       ...reviewableStats,
       treeTruncated: Boolean(tree.truncated),
       languageStats: buildLanguageStats(files),

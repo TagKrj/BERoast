@@ -12,16 +12,28 @@ The API keeps the existing labels:
 
 ## Counted Metrics
 
-Use these metrics from the GitHub tree:
+Use these metrics from the GitHub tree after applying the repository ignore rules:
 
-- `fileCount`: all files in the repo tree.
-- `totalBytes`: total bytes of all files.
+- `fileCount`: files kept for source review after ignored paths are removed.
+- `totalBytes`: total bytes of kept files.
+- `ignoredFileCount`: files skipped before size classification and AI analysis.
+- `ignoredBytes`: bytes skipped before size classification and AI analysis.
 - `reviewableFileCount`: files that are useful for source review.
 - `reviewableBytes`: bytes of reviewable files.
 - `assetBytes`: image, font, binary, archive, minified, lockfile, media, and 3D asset bytes.
 - `treeTruncated`: GitHub returned a truncated tree.
 
 Reviewable files include common source/config/text extensions such as `.js`, `.jsx`, `.ts`, `.tsx`, `.py`, `.java`, `.go`, `.html`, `.css`, `.scss`, `.json`, `.yml`, `.sql`, and `.md`.
+
+The ignore rules remove generated folders, dependency folders, build output, cache folders, most hidden folders and hidden files, lockfiles, logs, minified bundles, and binary/media extensions before classification or AI analysis.
+
+Hidden paths are skipped by default, except security-relevant paths and files:
+
+- `.github/workflows`
+- `Dockerfile`
+- `docker-compose.yml`
+- `docker-compose.yaml`
+- `.env.example`
 
 Non-reviewable files include common generated/binary/heavy asset patterns such as lockfiles, minified files, source maps, images, videos, archives, fonts, and 3D models.
 
@@ -61,4 +73,3 @@ Classify as `large` when any are true:
 Previously, Gemini classified repository size. That made the label unstable because AI can interpret asset-heavy repositories differently each time.
 
 Now the label is rule-based. For the same repository commit, the same metrics always produce the same result.
-

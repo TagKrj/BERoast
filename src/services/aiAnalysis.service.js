@@ -24,6 +24,8 @@ export const classifyRepositorySize = async (stats) => {
   const reviewableFileCount = stats.reviewableFileCount ?? stats.fileCount;
   const reviewableBytes = stats.reviewableBytes ?? stats.totalBytes;
   const assetBytes = stats.assetBytes ?? 0;
+  const ignoredFileCount = stats.ignoredFileCount ?? 0;
+  const ignoredBytes = stats.ignoredBytes ?? 0;
 
   if (
     stats.treeTruncated ||
@@ -34,7 +36,7 @@ export const classifyRepositorySize = async (stats) => {
   ) {
     return {
       sizeLabel: 'large',
-      sizeReason: `Large by deterministic rules: reviewable files=${reviewableFileCount}, reviewable bytes=${reviewableBytes}, total files=${stats.fileCount}, total bytes=${stats.totalBytes}. A repository is large when reviewable files > ${SIZE_LIMITS.medium.reviewableFileCount}, reviewable bytes > ${SIZE_LIMITS.medium.reviewableBytes}, total files > ${SIZE_LIMITS.medium.totalFileCount}, total bytes > ${SIZE_LIMITS.medium.totalBytes}, or the GitHub tree is truncated.`,
+      sizeReason: `Large by deterministic rules after ignore rules: reviewable files=${reviewableFileCount}, reviewable bytes=${reviewableBytes}, kept files=${stats.fileCount}, kept bytes=${stats.totalBytes}, ignored files=${ignoredFileCount}, ignored bytes=${ignoredBytes}. A repository is large when reviewable files > ${SIZE_LIMITS.medium.reviewableFileCount}, reviewable bytes > ${SIZE_LIMITS.medium.reviewableBytes}, kept files > ${SIZE_LIMITS.medium.totalFileCount}, kept bytes > ${SIZE_LIMITS.medium.totalBytes}, or the GitHub tree is truncated.`,
     };
   }
 
@@ -45,13 +47,13 @@ export const classifyRepositorySize = async (stats) => {
   ) {
     return {
       sizeLabel: 'medium',
-      sizeReason: `Medium by deterministic rules: reviewable files=${reviewableFileCount}, reviewable bytes=${reviewableBytes}, total files=${stats.fileCount}, total bytes=${stats.totalBytes}, asset bytes=${assetBytes}. It exceeds the small threshold but does not exceed the large threshold.`,
+      sizeReason: `Medium by deterministic rules after ignore rules: reviewable files=${reviewableFileCount}, reviewable bytes=${reviewableBytes}, kept files=${stats.fileCount}, kept bytes=${stats.totalBytes}, ignored files=${ignoredFileCount}, ignored bytes=${ignoredBytes}, asset bytes=${assetBytes}. It exceeds the small threshold but does not exceed the large threshold.`,
     };
   }
 
   return {
     sizeLabel: 'small',
-    sizeReason: `Small by deterministic rules: reviewable files=${reviewableFileCount}, reviewable bytes=${reviewableBytes}, total files=${stats.fileCount}, total bytes=${stats.totalBytes}. It is within the small thresholds.`,
+    sizeReason: `Small by deterministic rules after ignore rules: reviewable files=${reviewableFileCount}, reviewable bytes=${reviewableBytes}, kept files=${stats.fileCount}, kept bytes=${stats.totalBytes}, ignored files=${ignoredFileCount}, ignored bytes=${ignoredBytes}. It is within the small thresholds.`,
   };
 };
 
