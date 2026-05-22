@@ -8,7 +8,30 @@ const normalizeLine = (value) => {
   return Number.isFinite(line) && line > 0 ? line : 1;
 };
 
-export const normalizeFinalFindings = (items = []) =>
+const defaultSuggestion = (item, type) => {
+  if (type === 'security') {
+    return `Fix the security weakness in ${item.filePath || 'the affected file'} by validating untrusted input, enforcing the relevant authorization or safety boundary, and replacing the risky pattern with a safer implementation. Add a regression test that proves the risky path is blocked.`;
+  }
+
+  return `Refactor ${item.filePath || 'the affected file'} around this issue by reducing the problematic structure, separating responsibilities where needed, and keeping the existing behavior covered by focused tests.`;
+};
+
+const normalizeSuggestion = (item, type) => {
+  const value =
+    item.suggestion ||
+    item.fixSuggestion ||
+    item.recommendation ||
+    item.howToFix ||
+    item.remediation;
+
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+
+  return defaultSuggestion(item, type);
+};
+
+export const normalizeFinalFindings = (items = [], { type } = {}) =>
   items.slice(0, 80).map((item, index) => {
     const startLine = normalizeLine(item.startLine);
     const endLine = Math.max(startLine, normalizeLine(item.endLine));
@@ -18,6 +41,7 @@ export const normalizeFinalFindings = (items = []) =>
       filePath: String(item.filePath || 'unknown'),
       title: String(item.title || 'Untitled issue'),
       description: String(item.description || 'No description provided.'),
+      suggestion: normalizeSuggestion(item, type),
       startLine,
       endLine,
       severity,

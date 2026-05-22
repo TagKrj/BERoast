@@ -96,64 +96,109 @@
         },
         "grade": "B+",
         "score": 84,
-        "summaryTitle": "Good structure with several maintainability issues",
-        "shortReview": [
-          "The project has a clear module layout, but several files combine too many responsibilities.",
-          "Error handling is present in some paths, while validation is inconsistent around external input.",
-          "Security risk is moderate because secrets are not exposed, but dependency and request validation should be tightened."
-        ],
         "repoInfo": {
           "fileCount": 1220,
           "sizeLabel": "small",
-          "totalCodeSmell": 3,
+          "totalCodeSmell": 2,
           "totalSecurity": 2,
+          "totalHigh": 1,
+          "totalMedium": 2,
+          "totalLow": 1,
           "analysisType": "system_gemini"
         },
         "issues": {
-          "codeSmells": [
-            {
-              "index": 1,
-              "fileName": "src/services/repoAnalyzer.service.js",
-              "filePath": "src/services/repoAnalyzer.service.js",
-              "title": "Large function with mixed responsibilities",
-              "description": "The function fetches repository data, parses files, builds prompts, and formats the response in one place.",
-              "startLine": 42,
-              "endLine": 118,
-              "severity": "medium"
-            },
-            {
-              "index": 2,
-              "fileName": "src/controllers/roast.controller.js",
-              "filePath": "src/controllers/roast.controller.js",
-              "title": "Controller contains business logic",
-              "description": "The controller directly prepares analysis rules instead of delegating that work to the service layer.",
-              "startLine": 19,
-              "endLine": 57,
-              "severity": "low"
-            }
-          ],
-          "security": [
-            {
-              "index": 1,
-              "fileName": "src/routes/roast.routes.js",
-              "filePath": "src/routes/roast.routes.js",
-              "title": "Missing rate limit for analysis endpoint",
-              "description": "The analysis endpoint can trigger expensive AI calls and should have a stricter per-user rate limit.",
-              "startLine": 8,
-              "endLine": 15,
-              "severity": "high"
-            },
-            {
-              "index": 2,
-              "fileName": "src/services/github.service.js",
-              "filePath": "src/services/github.service.js",
-              "title": "Repository URL is not normalized before use",
-              "description": "The service should validate and normalize GitHub URLs before fetching remote content.",
-              "startLine": 31,
-              "endLine": 45,
-              "severity": "medium"
-            }
-          ]
+          "codeSmells": {
+            "all": 2,
+            "totalHigh": 0,
+            "totalMedium": 1,
+            "totalLow": 1,
+            "items": [
+              {
+                "id": "665f0f818c5d5b9b4f3a4444",
+                "type": "code_smell",
+                "index": 1,
+                "fileName": "src/services/repoAnalyzer.service.js",
+                "filePath": "src/services/repoAnalyzer.service.js",
+                "title": "Large function with mixed responsibilities",
+                "description": "The function fetches repository data, parses files, builds prompts, and formats the response in one place.",
+                "suggestion": "Split the repository fetch, parsing, prompt building, and response formatting into focused service functions. Keep the controller-facing method as an orchestration layer and add tests around the extracted behavior.",
+                "startLine": 42,
+                "endLine": 118,
+                "severity": "medium",
+                "severityDisplay": "Medium",
+                "fixPrompt": null,
+                "fixPromptVersion": 0,
+                "fixPromptInstruction": null,
+                "fixPromptInstructionAnalysis": null,
+                "fixPromptGeneratedAt": null
+              },
+              {
+                "id": "665f0f818c5d5b9b4f3a5555",
+                "type": "code_smell",
+                "index": 2,
+                "fileName": "src/controllers/roast.controller.js",
+                "filePath": "src/controllers/roast.controller.js",
+                "title": "Controller contains business logic",
+                "description": "The controller directly prepares analysis rules instead of delegating that work to the service layer.",
+                "suggestion": "Move rule preparation into the analysis service so the controller only validates input, calls the service, and returns the HTTP response.",
+                "startLine": 19,
+                "endLine": 57,
+                "severity": "low",
+                "severityDisplay": "Low",
+                "fixPrompt": null,
+                "fixPromptVersion": 0,
+                "fixPromptInstruction": null,
+                "fixPromptInstructionAnalysis": null,
+                "fixPromptGeneratedAt": null
+              }
+            ]
+          },
+          "security": {
+            "all": 2,
+            "totalHigh": 1,
+            "totalMedium": 1,
+            "totalLow": 0,
+            "items": [
+              {
+                "id": "665f0f818c5d5b9b4f3a6666",
+                "type": "security",
+                "index": 1,
+                "fileName": "src/routes/roast.routes.js",
+                "filePath": "src/routes/roast.routes.js",
+                "title": "Missing rate limit for analysis endpoint",
+                "description": "The analysis endpoint can trigger expensive AI calls and should have a stricter per-user rate limit.",
+                "suggestion": "Apply a stricter authenticated rate limit to the analysis endpoint and return a clear 429 response when the user exceeds the allowed request volume.",
+                "startLine": 8,
+                "endLine": 15,
+                "severity": "high",
+                "severityDisplay": "High",
+                "fixPrompt": null,
+                "fixPromptVersion": 0,
+                "fixPromptInstruction": null,
+                "fixPromptInstructionAnalysis": null,
+                "fixPromptGeneratedAt": null
+              },
+              {
+                "id": "665f0f818c5d5b9b4f3a7777",
+                "type": "security",
+                "index": 2,
+                "fileName": "src/services/github.service.js",
+                "filePath": "src/services/github.service.js",
+                "title": "Repository URL is not normalized before use",
+                "description": "The service should validate and normalize GitHub URLs before fetching remote content.",
+                "suggestion": "Normalize and validate GitHub URLs before making remote requests. Reject unsupported hosts, malformed paths, and private or non-public repository targets.",
+                "startLine": 31,
+                "endLine": 45,
+                "severity": "medium",
+                "severityDisplay": "Medium",
+                "fixPrompt": null,
+                "fixPromptVersion": 0,
+                "fixPromptInstruction": null,
+                "fixPromptInstructionAnalysis": null,
+                "fixPromptGeneratedAt": null
+              }
+            ]
+          }
         }
       }
     }
@@ -217,24 +262,65 @@
           "htmlUrl": "https://github.com/TagKrj/UTTQ_Web"
         },
         "grade": "B+",
-        "summaryTitle": "Good structure with several maintainability issues",
-        "shortReview": [
-          "The project is readable but needs clearer separation of controller and service logic.",
-          "Validation and rate limiting should be tightened for AI-heavy endpoints.",
-          "Security issues are manageable and mostly concentrated around request boundaries."
-        ],
         "repoInfo": {
           "fileCount": 1220,
           "sizeLabel": "small",
-          "totalCodeSmell": 3,
-          "totalSecurity": 2,
+          "totalCodeSmell": 0,
+          "totalSecurity": 0,
+          "totalHigh": 0,
+          "totalMedium": 0,
+          "totalLow": 0,
           "analysisType": "system_gemini"
         },
         "issues": {
-          "codeSmells": [],
-          "security": []
+          "codeSmells": {
+            "all": 0,
+            "totalHigh": 0,
+            "totalMedium": 0,
+            "totalLow": 0,
+            "items": []
+          },
+          "security": {
+            "all": 0,
+            "totalHigh": 0,
+            "totalMedium": 0,
+            "totalLow": 0,
+            "items": []
+          }
         }
       }
+    }
+  },
+  "generateIssueFixPrompt": {
+    "success": true,
+    "message": "Fix prompt generated successfully",
+    "data": {
+      "issue": {
+        "id": "665f0f818c5d5b9b4f3a4444",
+        "type": "code_smell",
+        "index": 1,
+        "fileName": "repoAnalyzer.service.js",
+        "filePath": "src/services/repoAnalyzer.service.js",
+        "title": "Large function with mixed responsibilities",
+        "description": "The function fetches repository data, parses files, builds prompts, and formats the response in one place.",
+        "suggestion": "Split the repository fetch, parsing, prompt building, and response formatting into focused service functions. Keep the controller-facing method as an orchestration layer and add tests around the extracted behavior.",
+        "startLine": 42,
+        "endLine": 118,
+        "severity": "medium",
+        "severityDisplay": "Medium",
+        "fixPrompt": "You are a senior software engineer. Help me fix this code smell issue in my repository...",
+        "fixPromptVersion": 1,
+        "fixPromptInstruction": "Make it more detailed, include unit tests, and ask for a diff.",
+        "fixPromptInstructionAnalysis": "System Gemini interpreted the request as: make the regenerated prompt more detailed, require unit tests, and ask the coding assistant to return a clear diff.",
+        "fixPromptGeneratedAt": "2026-05-22T10:00:00.000Z"
+      }
+    }
+  },
+  "regenerateIssueFixPromptWithoutInstruction": {
+    "success": false,
+    "message": "Regenerate prompt requires an instruction.",
+    "error": {
+      "code": "REGENERATE_PROMPT_INSTRUCTION_REQUIRED"
     }
   },
   "deleteRoastReport": {

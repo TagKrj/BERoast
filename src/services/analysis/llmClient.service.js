@@ -124,20 +124,20 @@ const callGeminiJson = async ({ prompt, errorPrefix }) => {
     const body = await readErrorBody(response);
     const statusCode = [401, 403].includes(response.status) ? 401 : 502;
     throw new AppError(
-      `OpenAI analysis failed with status ${response.status}. ${body}`,
+      `Gemini analysis failed with status ${response.status}. ${body}`,
       statusCode,
-      `${errorPrefix}_OPENAI_FAILED`,
+      `${errorPrefix}_GEMINI_FAILED`,
     );
   }
 
   const payload = await response.json();
-  const text = payload.choices?.[0]?.message?.content;
+  const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
 
   if (!text) {
     throw new AppError(
-      'OpenAI returned an empty response.',
+      'Gemini returned an empty response.',
       502,
-      `${errorPrefix}_OPENAI_EMPTY_RESPONSE`,
+      `${errorPrefix}_GEMINI_EMPTY_RESPONSE`,
     );
   }
 
@@ -215,21 +215,22 @@ const callOpenAIJson = async ({ prompt, openAiApiKey, errorPrefix }) => {
 
   if (!response.ok) {
     const body = await readErrorBody(response);
+    const statusCode = [401, 403].includes(response.status) ? 401 : 502;
     throw new AppError(
-      `Gemini analysis failed with status ${response.status}. ${body}`,
-      502,
-      `${errorPrefix}_GEMINI_FAILED`,
+      `OpenAI analysis failed with status ${response.status}. ${body}`,
+      statusCode,
+      `${errorPrefix}_OPENAI_FAILED`,
     );
   }
 
   const payload = await response.json();
-  const text = payload.candidates?.[0]?.content?.parts?.[0]?.text;
+  const text = payload.choices?.[0]?.message?.content;
 
   if (!text) {
     throw new AppError(
-      'Gemini returned an empty response.',
+      'OpenAI returned an empty response.',
       502,
-      `${errorPrefix}_GEMINI_EMPTY_RESPONSE`,
+      `${errorPrefix}_OPENAI_EMPTY_RESPONSE`,
     );
   }
 

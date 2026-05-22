@@ -2,6 +2,7 @@ import express from 'express';
 import {
   analyzeRepo,
   deleteRoast,
+  generatePromptForIssue,
   getRoastDetail,
   listRoastHistory,
 } from '../controllers/roast.controller.js';
@@ -124,29 +125,45 @@ router.get('/history', authMiddleware, listRoastHistory);
  *                     htmlUrl: https://github.com/facebook/react
  *                   grade: A
  *                   score: 92
- *                   summaryTitle: Strong architecture
- *                   summary: Clean modular code with a few areas to improve.
- *                   shortReview: Solid codebase with room for refinement.
  *                   repoInfo:
  *                     fileCount: 1934
  *                     sizeLabel: large
  *                     sizeDisplay: Large
  *                     totalCodeSmell: 12
  *                     totalSecurity: 3
+ *                     totalHigh: 4
+ *                     totalMedium: 8
+ *                     totalLow: 3
  *                     analysisType: system_gemini
  *                     analysisTypeDisplay: Gemini default system analysis
  *                   issues:
  *                     codeSmells:
- *                       - index: 1
- *                         fileName: App.js
- *                         filePath: src/App.js
- *                         title: Example smell
- *                         description: Example description
- *                         startLine: 10
- *                         endLine: 14
- *                         severity: medium
- *                         severityDisplay: Medium
- *                     security: []
+ *                       all: 12
+ *                       totalHigh: 2
+ *                       totalMedium: 7
+ *                       totalLow: 3
+ *                       items:
+ *                         - index: 1
+ *                           id: 66cfd1c6b1a5f4f1b3f7e222
+ *                           type: code_smell
+ *                           fileName: App.js
+ *                           filePath: src/App.js
+ *                           title: Example smell
+ *                           description: Example description
+ *                           suggestion: Split the large function into smaller focused functions and add a regression test for the affected behavior.
+ *                           startLine: 10
+ *                           endLine: 14
+ *                           severity: medium
+ *                           severityDisplay: Medium
+ *                           fixPrompt: null
+ *                           fixPromptVersion: 0
+ *                           fixPromptGeneratedAt: null
+ *                     security:
+ *                       all: 3
+ *                       totalHigh: 2
+ *                       totalMedium: 1
+ *                       totalLow: 0
+ *                       items: []
  *       400:
  *         description: Invalid payload or missing OpenAI key for large repositories
  *       401:
@@ -159,6 +176,99 @@ router.get('/history', authMiddleware, listRoastHistory);
  *         description: Server error
  */
 router.post('/:roastId/analyze', authMiddleware, analyzeRepo);
+
+/**
+ * @openapi
+ * /api/roasts/{roastId}/issues/{issueId}/prompt:
+ *   post:
+ *     tags:
+ *       - Roasts
+ *     summary: Generate or regenerate a fix prompt for one issue
+ *     description: Generates a prompt the user can paste into a coding assistant to fix one code smell or security issue. First generation may use an empty body. Regeneration requires regenerateInstruction; system Gemini analyzes that instruction and creates a meaningfully different prompt from the previous version.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: roastId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 66cfd1c6b1a5f4f1b3f7e111
+ *       - in: path
+ *         name: issueId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: 66cfd1c6b1a5f4f1b3f7e222
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               regenerateInstruction:
+ *                 type: string
+ *                 maxLength: 1000
+ *                 description: Required when regenerating an existing prompt. Describe how the new prompt should be changed.
+ *                 example: Make the prompt shorter and focus on a minimal code diff with tests.
+ *               instruction:
+ *                 type: string
+ *                 maxLength: 1000
+ *                 description: Optional alias for regenerateInstruction.
+ *               promptInstruction:
+ *                 type: string
+ *                 maxLength: 1000
+ *                 description: Optional alias for regenerateInstruction.
+ *           examples:
+ *             firstGenerate:
+ *               summary: First prompt generation
+ *               value: {}
+ *             regenerateWithInstruction:
+ *               summary: Regenerate with user instruction
+ *               value:
+ *                 regenerateInstruction: Make it more detailed, include unit tests, and ask for a diff.
+ *     responses:
+ *       200:
+ *         description: Fix prompt generated successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               message: Fix prompt generated successfully
+ *               data:
+ *                 issue:
+ *                   id: 66cfd1c6b1a5f4f1b3f7e222
+ *                   type: code_smell
+ *                   index: 1
+ *                   fileName: App.js
+ *                   filePath: src/App.js
+ *                   title: Example smell
+ *                   description: Example description
+ *                   suggestion: Split the component logic into smaller functions and keep rendering separate from data preparation.
+ *                   startLine: 10
+ *                   endLine: 14
+ *                   severity: medium
+ *                   severityDisplay: Medium
+ *                   fixPrompt: "You are a senior software engineer. Help me fix this code smell issue..."
+ *                   fixPromptVersion: 1
+ *                   fixPromptInstruction: Make it more detailed, include unit tests, and ask for a diff.
+ *                   fixPromptInstructionAnalysis: System Gemini interpreted the request as making the regenerated prompt more detailed, requiring unit tests, and asking for a clear diff.
+ *                   fixPromptGeneratedAt: 2026-05-22T10:00:00.000Z
+ *       400:
+ *         description: Invalid payload or missing regenerateInstruction when regenerating
+ *       401:
+ *         description: Missing or invalid bearer token
+ *       404:
+ *         description: Roast report or issue not found
+ *       502:
+ *         description: AI regeneration provider failed
+ */
+router.post(
+  '/:roastId/issues/:issueId/prompt',
+  authMiddleware,
+  generatePromptForIssue,
+);
 
 /**
  * @openapi

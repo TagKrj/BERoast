@@ -43,6 +43,10 @@ const roastIssueSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    suggestion: {
+      type: String,
+      required: true,
+    },
     startLine: {
       type: Number,
       required: true,
@@ -66,6 +70,27 @@ const roastIssueSchema = new mongoose.Schema(
       type: Number,
       min: 0,
       max: 1,
+      default: null,
+    },
+    fixPrompt: {
+      type: String,
+      default: null,
+    },
+    fixPromptVersion: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    fixPromptInstruction: {
+      type: String,
+      default: null,
+    },
+    fixPromptInstructionAnalysis: {
+      type: String,
+      default: null,
+    },
+    fixPromptGeneratedAt: {
+      type: Date,
       default: null,
     },
   },

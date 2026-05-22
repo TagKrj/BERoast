@@ -118,6 +118,7 @@ Instructions:
    - low -> weak evidence and should be removed
 5. Improve explanation:
    - Make reasoning clear, structured, and precise
+   - Add a concrete "suggestion" that tells the developer how to fix this exact smell
 6. Output MUST follow FINAL JSON format:
 [
   {
@@ -126,6 +127,7 @@ Instructions:
     "filePath": "<relative file path>",
     "title": "<short readable issue title>",
     "description": "<clear validated explanation>",
+    "suggestion": "<clear suggestion on how to fix this specific code smell>",
     "startLine": 1,
     "endLine": 1,
     "severity": "low | medium | high",
@@ -186,6 +188,8 @@ export const analyzeCodeSmells = async ({
 
   return {
     model: validation.model || model,
-    findings: normalizeFinalFindings(ensureArrayResult(validation.result)),
+    findings: normalizeFinalFindings(ensureArrayResult(validation.result), {
+      type: 'code_smell',
+    }),
   };
 };

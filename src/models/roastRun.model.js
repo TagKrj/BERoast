@@ -85,9 +85,6 @@ const roastRunSchema = new mongoose.Schema(
         min: 0,
         max: 100,
       },
-      summaryTitle: String,
-      summary: String,
-      shortReview: [String],
       metrics: {
         fileCount: Number,
         sizeLabel: {

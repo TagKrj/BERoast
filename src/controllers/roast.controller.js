@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import {
   analyzeCheckedRepository,
   deleteRoastReport,
+  generateIssuePrompt,
   getRoastHistory,
   getRoastReportDetail,
 } from '../services/roast.service.js';
@@ -56,6 +57,33 @@ const historyQuerySchema = z.object({
   search: z.string().trim().optional(),
 });
 
+const generatePromptSchema = z.object({
+  regenerateInstruction: z.preprocess((value) => {
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }, z.string().max(1000).optional()),
+  instruction: z.preprocess((value) => {
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }, z.string().max(1000).optional()),
+  promptInstruction: z.preprocess((value) => {
+    if (typeof value !== 'string') {
+      return value;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }, z.string().max(1000).optional()),
+});
+
 export const listRoastHistory = asyncHandler(async (req, res) => {
   const parsed = historyQuerySchema.safeParse(req.query);
 
@@ -107,6 +135,43 @@ export const deleteRoast = asyncHandler(async (req, res) => {
     message: 'Roast report deleted successfully',
     data: {
       roast: deletedRoast,
+    },
+  });
+});
+
+export const generatePromptForIssue = asyncHandler(async (req, res) => {
+  if (
+    !mongoose.isValidObjectId(req.params.roastId) ||
+    !mongoose.isValidObjectId(req.params.issueId)
+  ) {
+    throw new AppError('Roast issue not found.', 404, 'ROAST_ISSUE_NOT_FOUND');
+  }
+
+  const parsed = generatePromptSchema.safeParse(req.body || {});
+
+  if (!parsed.success) {
+    throw new AppError(
+      'Invalid prompt generation payload.',
+      400,
+      'INVALID_PROMPT_GENERATION_PAYLOAD',
+    );
+  }
+
+  const issue = await generateIssuePrompt({
+    roastId: req.params.roastId,
+    issueId: req.params.issueId,
+    userId: req.user._id,
+    regenerateInstruction:
+      parsed.data.regenerateInstruction ||
+      parsed.data.instruction ||
+      parsed.data.promptInstruction,
+  });
+
+  return res.json({
+    success: true,
+    message: 'Fix prompt generated successfully',
+    data: {
+      issue,
     },
   });
 });

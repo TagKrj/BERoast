@@ -5,6 +5,7 @@ import {
   fallbackCodeSmells,
   fallbackSecurityIssues,
 } from './analysis/localFallbackAnalysis.service.js';
+import { normalizeFinalFindings } from './analysis/findingNormalizer.service.js';
 
 const SIZE_LIMITS = {
   small: {
@@ -63,19 +64,6 @@ const severityWeight = {
   high: 3,
 };
 
-const countBySeverity = (items) =>
-  items.reduce(
-    (counts, item) => {
-      counts[item.severity] += 1;
-      return counts;
-    },
-    {
-      low: 0,
-      medium: 0,
-      high: 0,
-    },
-  );
-
 const calculateScore = ({ codeSmells, security }) => {
   const codeSmellPenalty = codeSmells.reduce(
     (total, item) => total + severityWeight[item.severity] * 3,
@@ -97,39 +85,6 @@ const gradeFromScore = (score) => {
   if (score >= 50) return 'C';
   if (score >= 40) return 'D';
   return 'F';
-};
-
-const buildSummary = ({ metadata, codeSmells, security, score, grade }) => {
-  const codeSmellCounts = countBySeverity(codeSmells);
-  const securityCounts = countBySeverity(security);
-  const totalIssues = codeSmells.length + security.length;
-
-  if (totalIssues === 0) {
-    return {
-      summaryTitle: 'No validated code smell or security issues found',
-      summary: `The validated analysis did not find strong code smell or security evidence in the sampled source files from ${metadata.repository.fullName}.`,
-      shortReview: [
-        'No validated code smell findings remained after precision filtering.',
-        'No validated security findings remained after precision filtering.',
-        `Final score is ${score} with grade ${grade}.`,
-      ],
-    };
-  }
-
-  const hasHighRisk = codeSmellCounts.high > 0 || securityCounts.high > 0;
-  const summaryTitle = hasHighRisk
-    ? 'High-priority validated issues found'
-    : 'Validated maintainability and security issues found';
-
-  return {
-    summaryTitle,
-    summary: `${metadata.repository.fullName} was analyzed with a two-phase pipeline: high-recall detection followed by precision validation. The final result contains ${codeSmells.length} validated code smell issue(s) and ${security.length} validated security issue(s). Security findings are weighted more heavily in the score because they have higher operational risk.`,
-    shortReview: [
-      `Code smell findings: ${codeSmells.length} total (${codeSmellCounts.high} high, ${codeSmellCounts.medium} medium, ${codeSmellCounts.low} low).`,
-      `Security findings: ${security.length} total (${securityCounts.high} high, ${securityCounts.medium} medium, ${securityCounts.low} low).`,
-      `Final score is ${score} with grade ${grade}.`,
-    ],
-  };
 };
 
 const shouldUseLocalFallback = (provider, error) =>
@@ -161,7 +116,6 @@ const runAnalysisStep = async ({
 };
 
 export const analyzeRepositoryCode = async ({
-  metadata,
   codeSample,
   provider,
   openAiApiKey,
@@ -193,17 +147,14 @@ export const analyzeRepositoryCode = async ({
     run: () => analyzeSecurityIssues({ codeSample, provider, openAiApiKey }),
   });
 
-  const codeSmells = codeSmellAnalysis.findings;
-  const security = securityAnalysis.findings;
+  const codeSmells = normalizeFinalFindings(codeSmellAnalysis.findings, {
+    type: 'code_smell',
+  });
+  const security = normalizeFinalFindings(securityAnalysis.findings, {
+    type: 'security',
+  });
   const score = calculateScore({ codeSmells, security });
   const grade = gradeFromScore(score);
-  const summary = buildSummary({
-    metadata,
-    codeSmells,
-    security,
-    score,
-    grade,
-  });
 
   return {
     provider,
@@ -213,7 +164,6 @@ export const analyzeRepositoryCode = async ({
       process.env.GEMINI_ANALYSIS_MODEL,
     grade,
     score,
-    ...summary,
     codeSmells,
     security,
   };

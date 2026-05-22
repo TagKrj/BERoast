@@ -130,9 +130,6 @@ Stores one check or analysis run. This document is optimized for history list an
     roastDateDisplay: String,
     grade: "A" | "B+" | "B" | "C+" | "C" | "D" | "F",
     score: Number,
-    summaryTitle: String,
-    summary: String,
-    shortReview: [String],
     metrics: {
       fileCount: Number,
       sizeLabel: "small" | "medium" | "large",
@@ -159,7 +156,7 @@ Indexes:
 
 Notes:
 
-- `roast_runs` intentionally stores summary and counters, not all issues.
+- `roast_runs` intentionally stores report header data and counters, not all issues.
 - `roastDateDisplay` is kept for the exact UI format, for example `24/3/2025`.
 - `roastDate` remains a real `Date` for sorting and filtering.
 
@@ -178,11 +175,17 @@ Stores individual code smell and security findings. This avoids unbounded issue 
   filePath: String,
   title: String,
   description: String,
+  suggestion: String,
   startLine: Number,
   endLine: Number,
   severity: "low" | "medium" | "high",
   ruleId: String,
   confidence: Number,
+  fixPrompt: String,
+  fixPromptVersion: Number,
+  fixPromptInstruction: String,
+  fixPromptInstructionAnalysis: String,
+  fixPromptGeneratedAt: Date,
   createdAt: Date
 }
 ```
@@ -197,6 +200,9 @@ Notes:
 
 - `type` maps directly to the two UI sections: code smells and security issues.
 - Store `startLine` and `endLine` as numbers so the frontend can display `line X-Y`.
+- `suggestion` is shown in the issue detail card as "Suggestions on how to fix it".
+- `fixPrompt`, `fixPromptVersion`, `fixPromptInstruction`, `fixPromptInstructionAnalysis`, and `fixPromptGeneratedAt` support the Generate prompt / Regenerate prompt action per issue.
+- Regeneration requires `fixPromptInstruction`; the backend sends that instruction to system Gemini so the new prompt is generated from the user's requested change instead of rotating automatically.
 
 ### `refresh_tokens`
 
@@ -272,13 +278,12 @@ The report detail endpoint should load:
 
 ## Suggested API To Collection Mapping
 
-| Endpoint | Collections |
-| --- | --- |
-| `GET /api/auth/github` | none |
-| `GET /api/auth/github/callback` | `users`, optional `refresh_tokens` |
-| `GET /api/me` | `users` |
-| `POST /api/repos/check` | `repositories`, `roast_runs` |
-| `POST /api/roasts/:roastId/analyze` | `roast_runs`, `roast_issues` |
-| `GET /api/roasts/history` | `roast_runs` |
-| `GET /api/roasts/:roastId` | `roast_runs`, `roast_issues` |
-
+| Endpoint                            | Collections                        |
+| ----------------------------------- | ---------------------------------- |
+| `GET /api/auth/github`              | none                               |
+| `GET /api/auth/github/callback`     | `users`, optional `refresh_tokens` |
+| `GET /api/me`                       | `users`                            |
+| `POST /api/repos/check`             | `repositories`, `roast_runs`       |
+| `POST /api/roasts/:roastId/analyze` | `roast_runs`, `roast_issues`       |
+| `GET /api/roasts/history`           | `roast_runs`                       |
+| `GET /api/roasts/:roastId`          | `roast_runs`, `roast_issues`       |
