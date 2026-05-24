@@ -1,162 +1,148 @@
 <mxfile host="app.diagrams.net" agent="Codex">
-  <diagram id="vibecheck-user-flow" name="VibeCheck User Flow">
-    <mxGraphModel dx="1664" dy="975" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1050" background="light-dark(#FFFFFF,#FFFFFF)" math="0" shadow="0">
+  <diagram id="vibecheck-user-flow" name="VibeCheck User Journey Flow">
+    <mxGraphModel dx="1768" dy="1036" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1100" background="#FFFFFF" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=28;fontStyle=1;fontColor=#334155;align=center;verticalAlign=middle;whiteSpace=wrap;" value="VibeCheck - User Journey Flow" vertex="1">
-          <mxGeometry height="50" width="780" x="360" y="30" as="geometry" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;fontSize=28;fontStyle=1;fontColor=#111827;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" value="VibeCheck User Journey Flow" vertex="1">
+          <mxGeometry height="50" width="740" x="480" y="30" as="geometry" />
         </mxCell>
-        <mxCell id="subtitle" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;fontColor=#475569;fontSize=13;" value="White background optimized: user flow from GitHub sign-in to repository check, analysis, report history, and deletion" vertex="1">
-          <mxGeometry height="44" width="780" x="360" y="90" as="geometry" />
+        <mxCell id="lane-start" parent="1" style="swimlane;html=1;rounded=1;whiteSpace=wrap;fillColor=#F8FAFC;strokeColor=#CBD5E1;fontColor=#334155;fontStyle=1;startSize=34;" value="Sign In and Repository Check" vertex="1">
+          <mxGeometry height="260" width="1580" x="60" y="110" as="geometry" />
         </mxCell>
-        <mxCell id="laneMain" parent="1" style="swimlane;html=1;startSize=32;rounded=1;whiteSpace=wrap;fillColor=#EFF6FF;strokeColor=#93C5FD;fontColor=#1E3A8A;fontStyle=1;swimlaneFillColor=#DBEAFE;" value="Main Journey" vertex="1">
-          <mxGeometry height="350" width="1380" x="60" y="170" as="geometry" />
+        <mxCell id="visit" parent="lane-start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#60A5FA;fontColor=#1E3A8A;fontStyle=1;" value="Open VibeCheck" vertex="1">
+          <mxGeometry height="70" width="130" x="40" y="80" as="geometry" />
         </mxCell>
-        <mxCell id="laneAnalyze" parent="1" style="swimlane;html=1;startSize=32;rounded=1;whiteSpace=wrap;fillColor=#FAF5FF;strokeColor=#C084FC;fontColor=#581C87;fontStyle=1;swimlaneFillColor=#F3E8FF;" value="Analysis Decision" vertex="1">
-          <mxGeometry height="250" width="1380" x="60" y="550" as="geometry" />
+        <mxCell id="login" parent="lane-start" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#38BDF8;fontColor=#075985;" value="Continue with GitHub" vertex="1">
+          <mxGeometry height="70" width="170" x="210" y="80" as="geometry" />
         </mxCell>
-        <mxCell id="clickAnalyze" parent="laneAnalyze" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontColor=#1E3A8A;" value="Click Analyze" vertex="1">
-          <mxGeometry height="70" width="160" x="620" y="130" as="geometry" />
+        <mxCell id="callback" parent="lane-start" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE9FE;strokeColor=#A78BFA;fontColor=#4C1D95;" value="GitHub callback&lt;br&gt;store access token and profile" vertex="1">
+          <mxGeometry height="90" width="190" x="420" y="70" as="geometry" />
         </mxCell>
-        <mxCell id="processing" parent="laneAnalyze" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E8FF;strokeColor=#9333EA;fontColor=#581C87;" value="Wait for analysis&lt;br&gt;code smells + security" vertex="1">
-          <mxGeometry height="70" width="220" x="870" y="130" as="geometry" />
+        <mxCell id="paste" parent="lane-start" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#4ADE80;fontColor=#166534;" value="Paste public GitHub repo URL" vertex="1">
+          <mxGeometry height="70" width="200" x="650" y="80" as="geometry" />
         </mxCell>
-        <mxCell id="e14" edge="1" parent="laneAnalyze" source="clickAnalyze" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="processing">
+        <mxCell id="check" parent="lane-start" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE7F3;strokeColor=#F472B6;fontColor=#831843;" value="Click Check&lt;br&gt;POST /api/repos/check" vertex="1">
+          <mxGeometry height="70" width="180" x="890" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="repo-info" parent="lane-start" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEDD5;strokeColor=#FB923C;fontColor=#7C2D12;" value="Show repo info&lt;br&gt;files, bytes, size label, next action" vertex="1">
+          <mxGeometry height="90" width="220" x="1110" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="invalid" parent="lane-start" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE4E6;strokeColor=#FB7185;fontColor=#881337;" value="Invalid/private repo&lt;br&gt;show localized error" vertex="1">
+          <mxGeometry height="60" width="220" x="1110" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-analysis" parent="1" style="swimlane;html=1;rounded=1;whiteSpace=wrap;fillColor=#FEFCE8;strokeColor=#FACC15;fontColor=#713F12;fontStyle=1;startSize=34;" value="Repository Analysis" vertex="1">
+          <mxGeometry height="300" width="1580" x="60" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="size-decision" parent="lane-analysis" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontColor=#78350F;" value="Is repo large?" vertex="1">
+          <mxGeometry height="100" width="150" x="80" y="75" as="geometry" />
+        </mxCell>
+        <mxCell id="openai-key" parent="lane-analysis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE4E6;strokeColor=#FB7185;fontColor=#881337;" value="Large repo&lt;br&gt;user must paste personal OpenAI API key" vertex="1">
+          <mxGeometry height="90" width="230" x="280" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="optional-key" parent="lane-analysis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0E7FF;strokeColor=#818CF8;fontColor=#312E81;" value="Small / medium repo&lt;br&gt;system Gemini by default&lt;br&gt;OpenAI key optional" vertex="1">
+          <mxGeometry height="90" width="230" x="280" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="analyze-click" parent="lane-analysis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#60A5FA;fontColor=#1E3A8A;" value="Click Analyze&lt;br&gt;POST /api/roasts/:id/analyze" vertex="1">
+          <mxGeometry height="90" width="230" x="580" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="wait-analysis" parent="lane-analysis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDF2F8;strokeColor=#F472B6;fontColor=#831843;" value="Loading with timer&lt;br&gt;backend filters, queues, caches, analyzes" vertex="1">
+          <mxGeometry height="90" width="240" x="870" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="analysis-error" parent="lane-analysis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFE4E6;strokeColor=#FB7185;fontColor=#881337;" value="Quota / timeout / invalid key&lt;br&gt;show localized alert" vertex="1">
+          <mxGeometry height="80" width="230" x="1180" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="analysis-success" parent="lane-analysis" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#4ADE80;fontColor=#166534;" value="Analysis completed&lt;br&gt;navigate to result page" vertex="1">
+          <mxGeometry height="80" width="230" x="1180" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-result" parent="1" style="swimlane;html=1;rounded=1;whiteSpace=wrap;fillColor=#F0FDF4;strokeColor=#86EFAC;fontColor=#14532D;fontStyle=1;startSize=34;" value="Report Review and Fix Prompt" vertex="1">
+          <mxGeometry height="280" width="1580" x="60" y="750" as="geometry" />
+        </mxCell>
+        <mxCell id="result-page" parent="lane-result" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#60A5FA;fontColor=#1E3A8A;fontStyle=1;" value="Result page&lt;br&gt;grade, score, repoInfo, severity totals" vertex="1">
+          <mxGeometry height="90" width="230" x="50" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="issue-tabs" parent="lane-result" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0F2FE;strokeColor=#38BDF8;fontColor=#075985;" value="Browse issue tables&lt;br&gt;Code smell / Security&lt;br&gt;All, High, Medium, Low counters" vertex="1">
+          <mxGeometry height="110" width="230" x="330" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="select-issue" parent="lane-result" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF5;strokeColor=#34D399;fontColor=#064E3B;" value="Select one issue&lt;br&gt;view description and suggestion" vertex="1">
+          <mxGeometry height="90" width="220" x="610" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="generate" parent="lane-result" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontColor=#78350F;" value="Generate prompt&lt;br&gt;or Regenerate with instruction" vertex="1">
+          <mxGeometry height="100" width="230" x="880" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="prompt-wait" parent="lane-result" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FDF2F8;strokeColor=#F472B6;fontColor=#831843;" value="Prompt loading timer&lt;br&gt;wait seconds while AI builds prompt" vertex="1">
+          <mxGeometry height="100" width="220" x="1160" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="prompt-success" parent="lane-result" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#4ADE80;fontColor=#166534;" value="Success alert&lt;br&gt;prompt appears in panel&lt;br&gt;copy to coding assistant" vertex="1">
+          <mxGeometry height="100" width="210" x="1420" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="history" parent="lane-result" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE9FE;strokeColor=#A78BFA;fontColor=#4C1D95;" value="History page&lt;br&gt;open saved report&lt;br&gt;or delete by roastId" vertex="1">
+          <mxGeometry height="80" width="220" x="610" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="visit" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="login">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="report" parent="laneAnalyze" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#14532D;" value="View roast report&lt;br&gt;grade, summary, repo info,&lt;br&gt;code smells, security" vertex="1">
-          <mxGeometry height="90" width="210" x="1150" y="120" as="geometry" />
-        </mxCell>
-        <mxCell id="e15" edge="1" parent="laneAnalyze" source="processing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="report">
+        <mxCell id="e2" edge="1" parent="1" source="login" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="callback">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="laneHistory" parent="1" style="swimlane;html=1;startSize=32;rounded=1;whiteSpace=wrap;fillColor=#FDF2F8;strokeColor=#F9A8D4;fontColor=#831843;fontStyle=1;swimlaneFillColor=#FCE7F3;" value="History Actions" vertex="1">
-          <mxGeometry height="160" width="1380" x="60" y="830" as="geometry" />
-        </mxCell>
-        <mxCell id="history" parent="laneHistory" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontColor=#1E3A8A;" value="Open History" vertex="1">
-          <mxGeometry height="60" width="180" x="70" y="58" as="geometry" />
-        </mxCell>
-        <mxCell id="start" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#14532D;fontStyle=1;" value="Start" vertex="1">
-          <mxGeometry height="56" width="110" x="100" y="245" as="geometry" />
-        </mxCell>
-        <mxCell id="login" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontColor=#1E3A8A;" value="Sign in with GitHub" vertex="1">
-          <mxGeometry height="70" width="180" x="270" y="238" as="geometry" />
-        </mxCell>
-        <mxCell id="authorize" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1F5F9;strokeColor=#94A3B8;fontColor=#334155;" value="GitHub authorizes&lt;br&gt;and grants access" vertex="1">
-          <mxGeometry height="70" width="190" x="510" y="238" as="geometry" />
-        </mxCell>
-        <mxCell id="dashboard" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#14532D;" value="Open dashboard&lt;br&gt;show name, email, avatar" vertex="1">
-          <mxGeometry height="70" width="210" x="760" y="238" as="geometry" />
-        </mxCell>
-        <mxCell id="pasteRepo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontColor=#1E3A8A;" value="Paste public GitHub URL&lt;br&gt;into the input" vertex="1">
-          <mxGeometry height="70" width="210" x="1030" y="238" as="geometry" />
-        </mxCell>
-        <mxCell id="clickCheck" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontColor=#1E3A8A;" value="Click Check" vertex="1">
-          <mxGeometry height="70" width="120" x="1290" y="238" as="geometry" />
-        </mxCell>
-        <mxCell id="checkResult" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#92400E;" value="Receive check result&lt;br&gt;repo, file count, size, roastId" vertex="1">
-          <mxGeometry height="72" width="240" x="580" y="390" as="geometry" />
-        </mxCell>
-        <mxCell id="invalidRepo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;" value="Invalid URL or private repo&lt;br&gt;show error to user" vertex="1">
-          <mxGeometry height="72" width="230" x="1020" y="390" as="geometry" />
-        </mxCell>
-        <mxCell id="largeDecision" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#CCFBF1;strokeColor=#0F766E;fontColor=#134E4A;" value="Repo large?" vertex="1">
-          <mxGeometry height="115" width="130" x="150" y="615" as="geometry" />
-        </mxCell>
-        <mxCell id="requireKey" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;" value="Require personal&lt;br&gt;OpenAI API key" vertex="1">
-          <mxGeometry height="72" width="210" x="350" y="630" as="geometry" />
-        </mxCell>
-        <mxCell id="optionalKey" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E0E7FF;strokeColor=#4F46E5;fontColor=#312E81;" value="Small / Medium&lt;br&gt;use system Gemini&lt;br&gt;or optional OpenAI key" vertex="1">
-          <mxGeometry height="70" width="250" x="350" y="715" as="geometry" />
-        </mxCell>
-        <mxCell id="missingKey" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;" value="Missing key for large repo&lt;br&gt;analysis is blocked" vertex="1">
-          <mxGeometry height="58" width="220" x="640" y="560" as="geometry" />
-        </mxCell>
-        <mxCell id="historyList" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE7F3;strokeColor=#DB2777;fontColor=#831843;" value="View analyzed repo list&lt;br&gt;grade, repo name, roast date" vertex="1">
-          <mxGeometry height="74" width="250" x="390" y="880" as="geometry" />
-        </mxCell>
-        <mxCell id="openDetail" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#14532D;" value="Select an item&lt;br&gt;open saved report" vertex="1">
-          <mxGeometry height="74" width="220" x="730" y="880" as="geometry" />
-        </mxCell>
-        <mxCell id="deleteItem" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEE2E2;strokeColor=#DC2626;fontColor=#7F1D1D;" value="Delete item by id&lt;br&gt;remove it from history" vertex="1">
-          <mxGeometry height="74" width="230" x="1040" y="880" as="geometry" />
-        </mxCell>
-        <mxCell id="end" parent="1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#14532D;fontStyle=1;" value="End" vertex="1">
-          <mxGeometry height="56" width="90" x="1320" y="890" as="geometry" />
-        </mxCell>
-        <mxCell id="e1" edge="1" parent="1" source="start" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="login">
+        <mxCell id="e3" edge="1" parent="1" source="callback" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="paste">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e2" edge="1" parent="1" source="login" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="authorize">
+        <mxCell id="e4" edge="1" parent="1" source="paste" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="check">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e3" edge="1" parent="1" source="authorize" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="dashboard">
+        <mxCell id="e5" edge="1" parent="1" source="check" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="repo-info">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e4" edge="1" parent="1" source="dashboard" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="pasteRepo">
+        <mxCell id="e6" edge="1" parent="1" source="check" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#FB7185;dashed=1;" target="invalid" value="error">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e5" edge="1" parent="1" source="pasteRepo" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="clickCheck">
+        <mxCell id="e7" edge="1" parent="1" source="repo-info" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="size-decision">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e6" edge="1" parent="1" source="clickCheck" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="checkResult" value="Valid">
+        <mxCell id="e8" edge="1" parent="1" source="size-decision" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#FB7185;" target="openai-key" value="Yes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="size-decision" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#818CF8;" target="optional-key" value="No">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="openai-key" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="analyze-click">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="optional-key" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="analyze-click">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="analyze-click" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="wait-analysis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="wait-analysis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#FB7185;dashed=1;" target="analysis-error" value="error">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="wait-analysis" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#4ADE80;" target="analysis-success" value="success">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e15" edge="1" parent="1" source="analysis-success" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="result-page">
           <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="1350" y="350" />
-              <mxPoint x="700" y="350" />
-            </Array>
+            <mxPoint x="1300" y="720" as="sourcePoint" />
+            <mxPoint x="175" y="820" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="e7" edge="1" parent="1" source="clickCheck" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#DC2626;fontColor=#DC2626;" target="invalidRepo" value="Invalid">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="1350" y="365" />
-              <mxPoint x="1135" y="365" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="e8" edge="1" parent="1" source="checkResult" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="largeDecision">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="700" y="535" />
-              <mxPoint x="215" y="535" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="e9" edge="1" parent="1" source="largeDecision" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="requireKey" value="Yes">
+        <mxCell id="e16" edge="1" parent="1" source="result-page" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="issue-tabs">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e10" edge="1" parent="1" source="largeDecision" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="optionalKey" value="No">
+        <mxCell id="e17" edge="1" parent="1" source="issue-tabs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="select-issue">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e11" edge="1" parent="1" source="requireKey" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="clickAnalyze">
+        <mxCell id="e18" edge="1" parent="1" source="select-issue" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="generate">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e12" edge="1" parent="1" source="optionalKey" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="clickAnalyze">
+        <mxCell id="e19" edge="1" parent="1" source="generate" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="prompt-wait">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e13" edge="1" parent="1" source="requireKey" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#DC2626;fontColor=#DC2626;" target="missingKey" value="Missing key">
+        <mxCell id="e20" edge="1" parent="1" source="prompt-wait" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#4ADE80;" target="prompt-success">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="e16" edge="1" parent="1" source="report" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="history">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="1315" y="810" />
-              <mxPoint x="220" y="810" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="e17" edge="1" parent="1" source="history" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="historyList">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e18" edge="1" parent="1" source="historyList" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="openDetail">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e19" edge="1" parent="1" source="openDetail" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="deleteItem">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="e20" edge="1" parent="1" source="deleteItem" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#64748B;" target="end">
+        <mxCell id="e21" edge="1" parent="1" source="history" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;strokeColor=#A78BFA;dashed=1;" target="result-page" value="open saved report">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
       </root>
