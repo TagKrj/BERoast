@@ -1,13 +1,20 @@
 import { callProviderJson } from './llmClient.service.js';
 import {
+  getCachedFileDetections,
+  rulesContentHash,
+  saveFileDetectionsToCache,
+} from './fileAnalysisCache.service.js';
+import {
   ensureArrayResult,
   normalizeFinalFindings,
 } from './findingNormalizer.service.js';
+import { fallbackCodeSmells } from './localFallbackAnalysis.service.js';
 import { loadRuleFile } from './ruleLoader.service.js';
 
 const getFileName = (filePath) => filePath.split('/').pop() || filePath;
+const ANALYSIS_TYPE = 'code_smell';
 const DETECTION_BATCH_SIZE = Number.parseInt(
-  process.env.ANALYSIS_DETECTION_BATCH_SIZE || '8',
+  process.env.ANALYSIS_DETECTION_BATCH_SIZE || '3',
   10,
 );
 
@@ -147,10 +154,121 @@ RAW DETECTION LIST:
 ${JSON.stringify(rawDetections, null, 2)}
 `;
 
+const shouldUseBatchFallback = (provider, error) =>
+  provider === 'system_gemini' &&
+  (error.statusCode >= 500 ||
+    error.statusCode === 429 ||
+    String(error.code || '').includes('GEMINI') ||
+    String(error.code || '').includes('JSON_INVALID'));
+
+const createDetectionBuckets = (files) =>
+  new Map(files.map((file) => [file.path, []]));
+
+const groupDetectionsByFile = (files, detections) => {
+  const buckets = createDetectionBuckets(files);
+
+  for (const detection of detections) {
+    const filePath = String(detection.filePath || '');
+    const fileName = String(detection.fileName || '');
+    const matchedFile = files.find(
+      (file) => file.path === filePath || getFileName(file.path) === fileName,
+    );
+
+    if (!matchedFile) {
+      continue;
+    }
+
+    buckets.get(matchedFile.path).push({
+      ...detection,
+      fileName: getFileName(matchedFile.path),
+      filePath: matchedFile.path,
+    });
+  }
+
+  return buckets;
+};
+
+const runDirect = (task) => task();
+
+const detectBatch = async ({
+  files,
+  openAiApiKey,
+  provider,
+  rule1,
+  runLimited,
+}) => {
+  try {
+    const response = await runLimited(() =>
+      callProviderJson({
+        prompt: buildDetectionPrompt({ files, rule1 }),
+        provider,
+        openAiApiKey,
+        errorPrefix: 'CODE_SMELL_DETECTION',
+      }),
+    );
+
+    return {
+      cacheable: true,
+      detections: ensureArrayResult(response.result),
+      files,
+      model: response.model,
+    };
+  } catch (error) {
+    if (!shouldUseBatchFallback(provider, error)) {
+      throw error;
+    }
+
+    return {
+      cacheable: false,
+      detections: fallbackCodeSmells({ snippets: files }),
+      files,
+      model: 'local-fallback-after-gemini-batch-failure',
+    };
+  }
+};
+
+const validateFindings = async ({
+  openAiApiKey,
+  provider,
+  rawDetections,
+  rule2,
+  runLimited,
+}) => {
+  try {
+    const validation = await runLimited(() =>
+      callProviderJson({
+        prompt: buildValidationPrompt({ rawDetections, rule2 }),
+        provider,
+        openAiApiKey,
+        errorPrefix: 'CODE_SMELL_VALIDATION',
+      }),
+    );
+
+    return {
+      findings: normalizeFinalFindings(ensureArrayResult(validation.result), {
+        type: ANALYSIS_TYPE,
+      }),
+      model: validation.model,
+    };
+  } catch (error) {
+    if (!shouldUseBatchFallback(provider, error)) {
+      throw error;
+    }
+
+    return {
+      findings: normalizeFinalFindings(rawDetections, {
+        type: ANALYSIS_TYPE,
+      }),
+      model: 'local-validation-fallback-after-gemini-failure',
+    };
+  }
+};
+
 export const analyzeCodeSmells = async ({
   codeSample,
   provider,
   openAiApiKey,
+  runLimited = runDirect,
 }) => {
   const [rule1, rule2] = await Promise.all([
     loadRuleFile('CODE_SMELL_RULE_1.md'),
@@ -159,17 +277,52 @@ export const analyzeCodeSmells = async ({
 
   const rawDetections = [];
   let model = null;
+  const repositoryFullName = codeSample.repositoryFullName || 'unknown';
+  const rulesHash = rulesContentHash(rule1);
+  const { cachedDetections, missingFiles } = await getCachedFileDetections({
+    analysisType: ANALYSIS_TYPE,
+    files: codeSample.snippets,
+    provider,
+    repositoryFullName,
+    rulesHash,
+  });
 
-  for (const files of chunkFiles(codeSample.snippets)) {
-    const response = await callProviderJson({
-      prompt: buildDetectionPrompt({ files, rule1 }),
+  rawDetections.push(...cachedDetections);
+
+  const batchResults = await Promise.all(
+    chunkFiles(missingFiles).map((files) =>
+      detectBatch({
+        files,
+        openAiApiKey,
+        provider,
+        rule1,
+        runLimited,
+      }),
+    ),
+  );
+
+  for (const result of batchResults) {
+    const detectionsByFile = groupDetectionsByFile(
+      result.files,
+      result.detections,
+    );
+    const matchedDetections = [...detectionsByFile.values()].flat();
+
+    model = result.model || model;
+    rawDetections.push(...matchedDetections);
+
+    if (!result.cacheable) {
+      continue;
+    }
+
+    await saveFileDetectionsToCache({
+      analysisType: ANALYSIS_TYPE,
+      detectionsByFile,
+      files: result.files,
       provider,
-      openAiApiKey,
-      errorPrefix: 'CODE_SMELL_DETECTION',
+      repositoryFullName,
+      rulesHash,
     });
-
-    model = response.model;
-    rawDetections.push(...ensureArrayResult(response.result));
   }
 
   if (rawDetections.length === 0) {
@@ -179,17 +332,16 @@ export const analyzeCodeSmells = async ({
     };
   }
 
-  const validation = await callProviderJson({
-    prompt: buildValidationPrompt({ rawDetections, rule2 }),
-    provider,
+  const validation = await validateFindings({
     openAiApiKey,
-    errorPrefix: 'CODE_SMELL_VALIDATION',
+    provider,
+    rawDetections,
+    rule2,
+    runLimited,
   });
 
   return {
     model: validation.model || model,
-    findings: normalizeFinalFindings(ensureArrayResult(validation.result), {
-      type: 'code_smell',
-    }),
+    findings: validation.findings,
   };
 };

@@ -6,6 +6,7 @@ import {
   fallbackSecurityIssues,
 } from './analysis/localFallbackAnalysis.service.js';
 import { normalizeFinalFindings } from './analysis/findingNormalizer.service.js';
+import { createConcurrencyLimiter } from '../utils/concurrency.js';
 
 const SIZE_LIMITS = {
   small: {
@@ -63,6 +64,10 @@ const severityWeight = {
   medium: 2,
   high: 3,
 };
+const ANALYSIS_MAX_CONCURRENT = Number.parseInt(
+  process.env.ANALYSIS_MAX_CONCURRENT || '5',
+  10,
+);
 
 const calculateScore = ({ codeSmells, security }) => {
   const codeSmellPenalty = codeSmells.reduce(
@@ -132,20 +137,30 @@ export const analyzeRepositoryCode = async ({
     provider === 'system_gemini'
       ? 'local-fallback-after-gemini-failure'
       : 'local-fallback';
-  const codeSmellAnalysis = await runAnalysisStep({
-    provider,
-    codeSample,
-    fallbackModel,
-    fallback: fallbackCodeSmells,
-    run: () => analyzeCodeSmells({ codeSample, provider, openAiApiKey }),
-  });
-  const securityAnalysis = await runAnalysisStep({
-    provider,
-    codeSample,
-    fallbackModel,
-    fallback: fallbackSecurityIssues,
-    run: () => analyzeSecurityIssues({ codeSample, provider, openAiApiKey }),
-  });
+  const runLimited = createConcurrencyLimiter(ANALYSIS_MAX_CONCURRENT);
+  const [codeSmellAnalysis, securityAnalysis] = await Promise.all([
+    runAnalysisStep({
+      provider,
+      codeSample,
+      fallbackModel,
+      fallback: fallbackCodeSmells,
+      run: () =>
+        analyzeCodeSmells({ codeSample, provider, openAiApiKey, runLimited }),
+    }),
+    runAnalysisStep({
+      provider,
+      codeSample,
+      fallbackModel,
+      fallback: fallbackSecurityIssues,
+      run: () =>
+        analyzeSecurityIssues({
+          codeSample,
+          provider,
+          openAiApiKey,
+          runLimited,
+        }),
+    }),
+  ]);
 
   const codeSmells = normalizeFinalFindings(codeSmellAnalysis.findings, {
     type: 'code_smell',

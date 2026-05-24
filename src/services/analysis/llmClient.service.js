@@ -12,6 +12,11 @@ const LLM_REQUEST_TIMEOUT_MS = Number.parseInt(
   10,
 );
 
+export const resolveProviderModel = (provider) =>
+  provider === 'user_openai'
+    ? process.env.OPENAI_ANALYSIS_MODEL || DEFAULT_OPENAI_MODEL
+    : process.env.GEMINI_ANALYSIS_MODEL || DEFAULT_GEMINI_MODEL;
+
 const stripJsonFence = (value) =>
   value
     .trim()
@@ -68,7 +73,7 @@ const callGeminiJson = async ({ prompt, errorPrefix }) => {
     );
   }
 
-  const model = process.env.GEMINI_ANALYSIS_MODEL || DEFAULT_GEMINI_MODEL;
+  const model = resolveProviderModel('system_gemini');
   let response;
 
   for (let attempt = 0; attempt <= LLM_RETRY_COUNT; attempt += 1) {
@@ -158,7 +163,7 @@ const callOpenAIJson = async ({ prompt, openAiApiKey, errorPrefix }) => {
     );
   }
 
-  const model = process.env.OPENAI_ANALYSIS_MODEL || DEFAULT_OPENAI_MODEL;
+  const model = resolveProviderModel('user_openai');
   let response;
 
   for (let attempt = 0; attempt <= LLM_RETRY_COUNT; attempt += 1) {

@@ -239,6 +239,42 @@ await ensureCollection('roast_issues', {
   validationAction: 'error',
 });
 
+await ensureCollection('analysis_file_caches', {
+  validator: {
+    $jsonSchema: {
+      bsonType: 'object',
+      required: [
+        'repositoryFullName',
+        'filePath',
+        'fileSha',
+        'analysisType',
+        'provider',
+        'model',
+        'rulesHash',
+        'rawDetections',
+        'detectedAt',
+        'createdAt',
+        'updatedAt',
+      ],
+      properties: {
+        repositoryFullName: { bsonType: 'string' },
+        filePath: { bsonType: 'string' },
+        fileSha: { bsonType: 'string' },
+        analysisType: { enum: ['code_smell', 'security'] },
+        provider: { enum: ['system_gemini', 'user_openai'] },
+        model: { bsonType: 'string' },
+        rulesHash: { bsonType: 'string' },
+        rawDetections: { bsonType: 'array' },
+        detectedAt: { bsonType: 'date' },
+        createdAt: { bsonType: 'date' },
+        updatedAt: { bsonType: 'date' },
+      },
+    },
+  },
+  validationLevel: 'strict',
+  validationAction: 'error',
+});
+
 await ensureCollection('refresh_tokens', {
   validator: {
     $jsonSchema: {
@@ -306,6 +342,23 @@ await database.roast_runs.createIndex({ status: 1, updatedAt: -1 });
 await database.roast_issues.createIndex({ roastRunId: 1, type: 1, index: 1 });
 await database.roast_issues.createIndex({ roastRunId: 1, severity: 1 });
 await database.roast_issues.createIndex({ userId: 1, createdAt: -1 });
+
+await database.analysis_file_caches.createIndex(
+  {
+    repositoryFullName: 1,
+    filePath: 1,
+    fileSha: 1,
+    analysisType: 1,
+    provider: 1,
+    model: 1,
+    rulesHash: 1,
+  },
+  { unique: true },
+);
+await database.analysis_file_caches.createIndex({
+  repositoryFullName: 1,
+  detectedAt: -1,
+});
 
 await database.refresh_tokens.createIndex({ tokenHash: 1 }, { unique: true });
 await database.refresh_tokens.createIndex({ userId: 1, createdAt: -1 });

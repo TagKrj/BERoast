@@ -1,4 +1,5 @@
 import AppError from '../utils/appError.js';
+import { createConcurrencyLimiter } from '../utils/concurrency.js';
 
 const GITHUB_API_URL = 'https://api.github.com';
 
@@ -132,20 +133,89 @@ const IGNORED_EXTENSIONS = new Set([
 const IGNORED_FILE_SUFFIXES = ['.min.js', '.min.css', 'bundle.js'];
 
 const MAX_FILE_BYTES_FOR_ANALYSIS = Number.parseInt(
-  process.env.MAX_FILE_BYTES_FOR_ANALYSIS || '90000',
+  process.env.ANALYSIS_MAX_FILE_BYTES ||
+    process.env.MAX_FILE_BYTES_FOR_ANALYSIS ||
+    '80000',
   10,
 );
-const MAX_ANALYSIS_FILES = Number.parseInt(
-  process.env.MAX_ANALYSIS_FILES || '8',
+const MAX_PRIORITY_ANALYSIS_FILES = Number.parseInt(
+  process.env.ANALYSIS_MAX_PRIORITY_FILES ||
+    process.env.MAX_ANALYSIS_FILES ||
+    '120',
   10,
 );
-const MAX_ANALYSIS_CHARS = Number.parseInt(
-  process.env.MAX_ANALYSIS_CHARS || '35000',
+const ANALYSIS_FETCH_CONCURRENT = Number.parseInt(
+  process.env.ANALYSIS_FETCH_CONCURRENT ||
+    process.env.ANALYSIS_MAX_CONCURRENT ||
+    '5',
   10,
 );
 
 const NON_REVIEWABLE_FILE_PATTERN =
   /\.(lock|min\.js|min\.css|map|png|jpg|jpeg|gif|webp|svg|ico|pdf|zip|tar|gz|rar|7z|mp4|mov|avi|mp3|wav|glb|gltf|fbx|obj|blend|ttf|otf|woff|woff2)$/i;
+
+const HIGH_PRIORITY_PREFIXES = [
+  'src/pages/',
+  'src/components/',
+  'src/services/',
+  'src/api/',
+  'src/hooks/',
+  'backend/',
+  'controllers/',
+  'services/',
+  'routes/',
+  'middleware/',
+  'middlewares/',
+  'auth/',
+  'utils/',
+  '.github/workflows/',
+];
+
+const HIGH_PRIORITY_SEGMENTS = new Set([
+  'controllers',
+  'services',
+  'routes',
+  'middleware',
+  'middlewares',
+  'auth',
+  'api',
+  'hooks',
+  'pages',
+  'components',
+  'utils',
+]);
+
+const LOW_PRIORITY_SEGMENTS = new Set([
+  'constants',
+  'types',
+  'styles',
+  'style',
+  'mock',
+  'mocks',
+  'fixtures',
+  'config',
+  'configs',
+]);
+
+const HIGH_PRIORITY_EXTENSIONS = new Set([
+  '.js',
+  '.jsx',
+  '.ts',
+  '.tsx',
+  '.mjs',
+  '.cjs',
+  '.vue',
+  '.svelte',
+  '.py',
+  '.java',
+  '.kt',
+  '.go',
+  '.rb',
+  '.php',
+  '.cs',
+  '.rs',
+  '.swift',
+]);
 
 export const parseGithubRepoUrl = (repoUrl) => {
   try {
@@ -296,6 +366,64 @@ const isReviewableSourceFile = (file) => {
 const isAnalysisCandidate = (file) =>
   isReviewableSourceFile(file) && file.size <= MAX_FILE_BYTES_FOR_ANALYSIS;
 
+const pathSegments = (filePath) => filePath.split('/').filter(Boolean);
+
+const hasHighPriorityPath = (filePath) => {
+  const normalizedPath = filePath.replace(/\\/g, '/');
+
+  if (
+    HIGH_PRIORITY_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix))
+  ) {
+    return true;
+  }
+
+  return pathSegments(normalizedPath).some((segment) =>
+    HIGH_PRIORITY_SEGMENTS.has(segment),
+  );
+};
+
+const hasLowPriorityPath = (filePath) =>
+  pathSegments(filePath).some((segment) => LOW_PRIORITY_SEGMENTS.has(segment));
+
+const analysisPriorityScore = (file) => {
+  const filePath = file.path || '';
+  const fileName = getFileName(filePath);
+  const extension = getExtension(filePath);
+  let score = 0;
+
+  if (hasHighPriorityPath(filePath) || isExplicitReviewableFile(filePath)) {
+    score += 1_000;
+  }
+
+  if (HIGH_PRIORITY_EXTENSIONS.has(extension)) {
+    score += 250;
+  } else if (['.json', '.yml', '.yaml', '.sql'].includes(extension)) {
+    score += 90;
+  } else {
+    score += 30;
+  }
+
+  if (hasLowPriorityPath(filePath)) {
+    score -= 250;
+  }
+
+  if (
+    /auth|login|token|jwt|session|password|secret|api|route|controller|service|middleware/i.test(
+      filePath,
+    )
+  ) {
+    score += 220;
+  }
+
+  if (/test|spec|stories/i.test(fileName)) {
+    score -= 180;
+  }
+
+  score += Math.min(160, Math.floor((file.size || 0) / 750));
+
+  return score;
+};
+
 const encodeRawPath = (filePath) =>
   filePath
     .split('/')
@@ -395,47 +523,58 @@ export const loadRepositoryCodeSample = async (metadata) => {
   const selectedFiles = metadata.files
     .filter(isAnalysisCandidate)
     .sort((left, right) => {
-      const leftScore = left.size || 0;
-      const rightScore = right.size || 0;
-      return rightScore - leftScore;
+      const priorityDiff =
+        analysisPriorityScore(right) - analysisPriorityScore(left);
+
+      if (priorityDiff !== 0) {
+        return priorityDiff;
+      }
+
+      return (right.size || 0) - (left.size || 0);
     })
-    .slice(0, MAX_ANALYSIS_FILES);
+    .slice(0, MAX_PRIORITY_ANALYSIS_FILES);
 
-  const snippets = [];
-  let usedChars = 0;
+  const limit = createConcurrencyLimiter(ANALYSIS_FETCH_CONCURRENT);
+  const snippets = (
+    await Promise.all(
+      selectedFiles.map((file) =>
+        limit(async () => {
+          const rawUrl = `https://raw.githubusercontent.com/${metadata.repository.owner}/${metadata.repository.name}/${metadata.repository.defaultBranch}/${encodeRawPath(file.path)}`;
+          const response = await fetch(rawUrl, {
+            headers: process.env.GITHUB_TOKEN
+              ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+              : undefined,
+          });
 
-  for (const file of selectedFiles) {
-    if (usedChars >= MAX_ANALYSIS_CHARS) {
-      break;
-    }
+          if (!response.ok) {
+            return null;
+          }
 
-    const rawUrl = `https://raw.githubusercontent.com/${metadata.repository.owner}/${metadata.repository.name}/${metadata.repository.defaultBranch}/${encodeRawPath(file.path)}`;
-    const response = await fetch(rawUrl, {
-      headers: process.env.GITHUB_TOKEN
-        ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
-        : undefined,
-    });
+          const content = await response.text();
 
-    if (!response.ok) {
-      continue;
-    }
+          return {
+            path: file.path,
+            sha: file.sha,
+            size: file.size || 0,
+            priorityScore: analysisPriorityScore(file),
+            content,
+          };
+        }),
+      ),
+    )
+  ).filter(Boolean);
 
-    const content = await response.text();
-    const remaining = MAX_ANALYSIS_CHARS - usedChars;
-    const clippedContent = content.slice(0, Math.max(0, remaining));
-
-    snippets.push({
-      path: file.path,
-      size: file.size || 0,
-      content: clippedContent,
-    });
-
-    usedChars += clippedContent.length;
-  }
+  const totalCharacters = snippets.reduce(
+    (sum, file) => sum + file.content.length,
+    0,
+  );
 
   return {
+    repositoryFullName: metadata.repository.fullName,
+    commitSha: metadata.repository.commitSha,
     snippets,
     selectedFileCount: snippets.length,
-    totalCharacters: usedChars,
+    selectedCandidateCount: selectedFiles.length,
+    totalCharacters,
   };
 };

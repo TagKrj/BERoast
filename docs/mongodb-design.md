@@ -204,6 +204,38 @@ Notes:
 - `fixPrompt`, `fixPromptVersion`, `fixPromptInstruction`, `fixPromptInstructionAnalysis`, and `fixPromptGeneratedAt` support the Generate prompt / Regenerate prompt action per issue.
 - Regeneration requires `fixPromptInstruction`; the backend sends that instruction to system Gemini so the new prompt is generated from the user's requested change instead of rotating automatically.
 
+### `analysis_file_caches`
+
+Stores raw per-file AI detection results so unchanged files do not need to be sent to Gemini/OpenAI again. Source code is not stored in this collection.
+
+```js
+{
+  _id: ObjectId,
+  repositoryFullName: String,
+  filePath: String,
+  fileSha: String,
+  analysisType: "code_smell" | "security",
+  provider: "system_gemini" | "user_openai",
+  model: String,
+  rulesHash: String,
+  rawDetections: Array,
+  detectedAt: Date,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+Indexes:
+
+- Unique cache lookup: `{ repositoryFullName: 1, filePath: 1, fileSha: 1, analysisType: 1, provider: 1, model: 1, rulesHash: 1 }`
+- Repo cache audit: `{ repositoryFullName: 1, detectedAt: -1 }`
+
+Notes:
+
+- `fileSha` is the GitHub blob SHA from the repository tree.
+- `rulesHash` invalidates cache when the relevant detection rules change.
+- Cache stores raw detections only; validation still runs with the current validation prompt/rules.
+
 ### `refresh_tokens`
 
 Optional collection for refresh-token rotation if the backend uses persistent sessions.
