@@ -15,10 +15,10 @@ import { formatDateDisplay, toTitleCase } from '../utils/formatters.js';
 
 const defaultSuggestionForIssue = (issue) => {
   if (issue.type === 'security') {
-    return `Fix the security weakness in ${issue.filePath} by validating untrusted input, enforcing the relevant authorization or safety boundary, and replacing the risky pattern with a safer implementation. Add a regression test that proves the risky path is blocked.`;
+    return `Fix "${issue.title}" in ${issue.filePath} by addressing the exact risky pattern described in the finding. Validate the untrusted input or trust boundary involved, replace the unsafe implementation with a safer one, and add a regression test for this specific security path.`;
   }
 
-  return `Refactor ${issue.filePath} around this issue by reducing the problematic structure, separating responsibilities where needed, and keeping the existing behavior covered by focused tests.`;
+  return `Fix "${issue.title}" in ${issue.filePath} by targeting the exact code smell described in the finding. Make the smallest behavior-preserving refactor, keep the change focused on the affected block, and add a focused test or manual verification for the behavior.`;
 };
 
 const issueToResponse = (issue, index) => ({

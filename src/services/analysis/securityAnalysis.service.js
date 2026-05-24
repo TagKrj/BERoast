@@ -62,6 +62,7 @@ IMPORTANT:
     "category": "<category>",
     "title": "<short issue title>",
     "description": "<why this is detected>",
+    "suggestion": "<specific, actionable remediation for this exact security issue in this exact file>",
     "evidence": "<code snippet or description>",
     "startLine": 1,
     "endLine": 1,
@@ -75,7 +76,12 @@ IMPORTANT:
     }
   }
 ]
-7. If no security issues found, return:
+7. The suggestion MUST be issue-specific:
+   - Reference the exact vulnerability, trust boundary, or unsafe API.
+   - Explain the safe replacement or validation strategy.
+   - Include the security test or attack path that should be blocked.
+   - Do NOT return generic templates such as "validate input" unless you name the exact input/boundary/pattern.
+8. If no security issues found, return:
 []
 
 SECURITY_RULE_1.md:
@@ -126,6 +132,7 @@ Instructions:
    - low -> weak evidence and should be removed
 5. Improve explanation:
    - Make reasoning clear, structured, and precise
+   - Preserve and improve the Phase 1 suggestion when it is useful
    - Add a concrete "suggestion" that tells the developer how to fix this exact security issue
 6. Output MUST follow FINAL JSON format:
 [
@@ -145,6 +152,8 @@ Instructions:
 7. Important:
    - DO NOT include issues with confidence = low
    - Ensure output is clean, consistent, and deduplicated
+   - suggestion MUST be specific to the issue title, file, evidence, and line range
+   - suggestion MUST NOT be a generic fallback sentence shared across unrelated issues
 8. If no valid security issues remain:
 []
 
@@ -279,7 +288,7 @@ export const analyzeSecurityIssues = async ({
   const rawDetections = [];
   let model = null;
   const repositoryFullName = codeSample.repositoryFullName || 'unknown';
-  const rulesHash = rulesContentHash(rule1);
+  const rulesHash = rulesContentHash('security-detection-suggestion-v2', rule1);
   const { cachedDetections, missingFiles } = await getCachedFileDetections({
     analysisType: ANALYSIS_TYPE,
     files: codeSample.snippets,

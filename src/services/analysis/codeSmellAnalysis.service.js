@@ -62,6 +62,7 @@ IMPORTANT:
     "category": "<category>",
     "title": "<short issue title>",
     "description": "<why this is detected>",
+    "suggestion": "<specific, actionable fix suggestion for this exact smell in this exact file>",
     "evidence": "<code snippet or description>",
     "startLine": 1,
     "endLine": 1,
@@ -75,7 +76,11 @@ IMPORTANT:
     }
   }
 ]
-7. If no smells found, return:
+7. The suggestion MUST be issue-specific:
+   - Reference the exact smell and code context.
+   - Explain what to change, where to start, and what to verify.
+   - Do NOT return generic templates such as "refactor this file" unless you also include the concrete refactor direction.
+8. If no smells found, return:
 []
 
 CODE_SMELL_RULE_1.md:
@@ -125,6 +130,7 @@ Instructions:
    - low -> weak evidence and should be removed
 5. Improve explanation:
    - Make reasoning clear, structured, and precise
+   - Preserve and improve the Phase 1 suggestion when it is useful
    - Add a concrete "suggestion" that tells the developer how to fix this exact smell
 6. Output MUST follow FINAL JSON format:
 [
@@ -144,6 +150,8 @@ Instructions:
 7. Important:
    - DO NOT include smells with confidence = low
    - Ensure output is clean, consistent, and deduplicated
+   - suggestion MUST be specific to the issue title, file, evidence, and line range
+   - suggestion MUST NOT be a generic fallback sentence shared across unrelated smells
 8. If no valid smells remain:
 []
 
@@ -278,7 +286,10 @@ export const analyzeCodeSmells = async ({
   const rawDetections = [];
   let model = null;
   const repositoryFullName = codeSample.repositoryFullName || 'unknown';
-  const rulesHash = rulesContentHash(rule1);
+  const rulesHash = rulesContentHash(
+    'code-smell-detection-suggestion-v2',
+    rule1,
+  );
   const { cachedDetections, missingFiles } = await getCachedFileDetections({
     analysisType: ANALYSIS_TYPE,
     files: codeSample.snippets,
