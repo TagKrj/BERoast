@@ -10,16 +10,41 @@ import errorMiddleware from './middlewares/error.middleware.js';
 
 const app = express();
 
+const DEFAULT_CORS_ORIGINS = [
+  'http://localhost:5173',
+  'https://vibecheckai-nine.vercel.app',
+];
+
+const parseCorsOrigins = (...values) =>
+  values
+    .filter(Boolean)
+    .flatMap((value) => String(value).split(','))
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+const allowedCorsOrigins = new Set([
+  ...DEFAULT_CORS_ORIGINS,
+  ...parseCorsOrigins(
+    process.env.CORS_ORIGINS,
+    process.env.CLIENT_ORIGIN,
+    process.env.CLIENT_URL,
+  ),
+]);
+
 // Parse JSON
 app.use(express.json());
 
 // CORS
 app.use(
   cors({
-    origin:
-      process.env.CLIENT_ORIGIN ||
-      process.env.CLIENT_URL ||
-      'http://localhost:5173',
+    origin(origin, callback) {
+      if (!origin || allowedCorsOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, false);
+    },
     credentials: true,
   }),
 );
