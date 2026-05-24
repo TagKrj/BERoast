@@ -262,6 +262,8 @@ const githubFetchJson = async (url, errorMessage, errorCode) => {
   const response = await fetch(url, {
     headers: githubHeaders(),
   });
+  const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
+  const rateLimitReset = response.headers.get('x-ratelimit-reset');
 
   if (response.status === 404) {
     throw new AppError(
@@ -272,6 +274,34 @@ const githubFetchJson = async (url, errorMessage, errorCode) => {
   }
 
   if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    const message = payload?.message || errorMessage;
+
+    if (
+      response.status === 403 &&
+      (rateLimitRemaining === '0' || /rate limit/i.test(message))
+    ) {
+      const resetAt = rateLimitReset
+        ? new Date(Number(rateLimitReset) * 1000).toISOString()
+        : null;
+
+      throw new AppError(
+        resetAt
+          ? `GitHub API rate limit exceeded. Add GITHUB_TOKEN on the backend or try again after ${resetAt}.`
+          : 'GitHub API rate limit exceeded. Add GITHUB_TOKEN on the backend or try again later.',
+        429,
+        'GITHUB_RATE_LIMIT_EXCEEDED',
+      );
+    }
+
+    if (response.status === 403) {
+      throw new AppError(
+        'GitHub refused access to this repository. Make sure the repository is public and configure GITHUB_TOKEN on the backend if this happens on Render.',
+        403,
+        errorCode,
+      );
+    }
+
     throw new AppError(errorMessage, response.status, errorCode);
   }
 
