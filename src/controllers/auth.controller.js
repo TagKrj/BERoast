@@ -2,6 +2,7 @@ import {
   authenticateWithGithubCode,
   buildGithubAuthUrl,
   formatCurrentUser,
+  resolveGithubCallbackUrl,
 } from '../services/githubAuth.service.js';
 import { signAccessToken } from '../services/token.service.js';
 import asyncHandler from '../utils/asyncHandler.js';
@@ -17,8 +18,18 @@ const buildFrontendRedirectUrl = ({ accessToken, user }) => {
   return redirectUrl.toString();
 };
 
+const getRequestOrigin = (req) => {
+  const forwardedProto = req.get('x-forwarded-proto')?.split(',')[0]?.trim();
+  const protocol = forwardedProto || req.protocol;
+  return `${protocol}://${req.get('host')}`;
+};
+
 export const getGithubAuthUrl = asyncHandler(async (req, res) => {
-  const authUrl = buildGithubAuthUrl(req.query.state);
+  const callbackUrl = resolveGithubCallbackUrl(getRequestOrigin(req));
+  const authUrl = buildGithubAuthUrl({
+    callbackUrl,
+    state: req.query.state,
+  });
 
   const wantsBrowserRedirect =
     req.query.redirect === 'true' && req.accepts('html');
@@ -35,7 +46,11 @@ export const getGithubAuthUrl = asyncHandler(async (req, res) => {
 });
 
 export const handleGithubCallback = asyncHandler(async (req, res) => {
-  const user = await authenticateWithGithubCode(req.query.code);
+  const callbackUrl = resolveGithubCallbackUrl(getRequestOrigin(req));
+  const user = await authenticateWithGithubCode({
+    callbackUrl,
+    code: req.query.code,
+  });
   const accessToken = signAccessToken(user);
 
   if (req.query.response !== 'json') {

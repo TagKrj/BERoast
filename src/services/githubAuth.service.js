@@ -6,14 +6,21 @@ const GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token';
 const GITHUB_USER_URL = 'https://api.github.com/user';
 const GITHUB_EMAILS_URL = 'https://api.github.com/user/emails';
 
+const isLocalhostUrl = (value) => {
+  try {
+    const url = new URL(value);
+    return ['localhost', '127.0.0.1', '0.0.0.0'].includes(url.hostname);
+  } catch {
+    return false;
+  }
+};
+
 const ensureGithubOAuthConfig = () => {
-  const { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, GITHUB_CALLBACK_URL } =
-    process.env;
+  const { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET } = process.env;
 
   if (
     !GITHUB_CLIENT_ID ||
     !GITHUB_CLIENT_SECRET ||
-    !GITHUB_CALLBACK_URL ||
     GITHUB_CLIENT_ID.startsWith('replace_with_') ||
     GITHUB_CLIENT_SECRET.startsWith('replace_with_')
   ) {
@@ -25,12 +32,30 @@ const ensureGithubOAuthConfig = () => {
   }
 };
 
-export const buildGithubAuthUrl = (state) => {
+export const resolveGithubCallbackUrl = (requestOrigin) => {
+  const configuredCallbackUrl = process.env.GITHUB_CALLBACK_URL;
+
+  if (configuredCallbackUrl && !isLocalhostUrl(configuredCallbackUrl)) {
+    return configuredCallbackUrl;
+  }
+
+  if (requestOrigin && !isLocalhostUrl(requestOrigin)) {
+    return `${requestOrigin.replace(/\/$/, '')}/api/auth/github/callback`;
+  }
+
+  if (configuredCallbackUrl) {
+    return configuredCallbackUrl;
+  }
+
+  return 'http://localhost:5001/api/auth/github/callback';
+};
+
+export const buildGithubAuthUrl = ({ callbackUrl, state } = {}) => {
   ensureGithubOAuthConfig();
 
   const params = new URLSearchParams({
     client_id: process.env.GITHUB_CLIENT_ID,
-    redirect_uri: process.env.GITHUB_CALLBACK_URL,
+    redirect_uri: callbackUrl || resolveGithubCallbackUrl(),
     scope: 'read:user user:email',
     allow_signup: 'true',
   });
@@ -42,7 +67,7 @@ export const buildGithubAuthUrl = (state) => {
   return `${GITHUB_AUTHORIZE_URL}?${params.toString()}`;
 };
 
-const requestGithubAccessToken = async (code) => {
+const requestGithubAccessToken = async ({ callbackUrl, code }) => {
   const response = await fetch(GITHUB_TOKEN_URL, {
     method: 'POST',
     headers: {
@@ -53,7 +78,7 @@ const requestGithubAccessToken = async (code) => {
       client_id: process.env.GITHUB_CLIENT_ID,
       client_secret: process.env.GITHUB_CLIENT_SECRET,
       code,
-      redirect_uri: process.env.GITHUB_CALLBACK_URL,
+      redirect_uri: callbackUrl || resolveGithubCallbackUrl(),
     }),
   });
 
@@ -119,7 +144,7 @@ const toAuthUser = (user) => ({
   },
 });
 
-export const authenticateWithGithubCode = async (code) => {
+export const authenticateWithGithubCode = async ({ callbackUrl, code }) => {
   ensureGithubOAuthConfig();
 
   if (!code) {
@@ -130,7 +155,7 @@ export const authenticateWithGithubCode = async (code) => {
     );
   }
 
-  const accessToken = await requestGithubAccessToken(code);
+  const accessToken = await requestGithubAccessToken({ callbackUrl, code });
   const [githubProfile, emails] = await Promise.all([
     fetchGithubJson(GITHUB_USER_URL, accessToken),
     fetchGithubJson(GITHUB_EMAILS_URL, accessToken),

@@ -10,6 +10,8 @@ import errorMiddleware from './middlewares/error.middleware.js';
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 const DEFAULT_CORS_ORIGINS = [
   'http://localhost:5173',
   'https://vibecheckai-nine.vercel.app',
