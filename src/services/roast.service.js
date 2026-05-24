@@ -301,8 +301,13 @@ const generateIssueFixPromptWithAi = async ({
     });
   } catch (error) {
     if (requireAi) {
+      const message =
+        error.statusCode === 429
+          ? 'Gemini quota is exhausted while regenerating the prompt. Please wait and try again.'
+          : 'AI could not analyze regenerateInstruction to regenerate the prompt.';
+
       throw new AppError(
-        'AI could not analyze regenerateInstruction to regenerate the prompt.',
+        message,
         error.statusCode || 502,
         error.code || 'FIX_PROMPT_REGENERATION_FAILED',
       );

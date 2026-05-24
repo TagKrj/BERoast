@@ -35,6 +35,9 @@ const wait = (delayMs) =>
 const shouldRetryStatus = (status) =>
   [408, 409, 425, 429, 500, 502, 503, 504].includes(status);
 
+const providerErrorStatusCode = (status) =>
+  [401, 403, 429].includes(status) ? status : 502;
+
 const readErrorBody = async (response) => {
   try {
     const text = await response.text();
@@ -122,10 +125,9 @@ const callGeminiJson = async ({ prompt, errorPrefix }) => {
 
   if (!response.ok) {
     const body = await readErrorBody(response);
-    const statusCode = [401, 403].includes(response.status) ? 401 : 502;
     throw new AppError(
       `Gemini analysis failed with status ${response.status}. ${body}`,
-      statusCode,
+      providerErrorStatusCode(response.status),
       `${errorPrefix}_GEMINI_FAILED`,
     );
   }
@@ -215,10 +217,9 @@ const callOpenAIJson = async ({ prompt, openAiApiKey, errorPrefix }) => {
 
   if (!response.ok) {
     const body = await readErrorBody(response);
-    const statusCode = [401, 403].includes(response.status) ? 401 : 502;
     throw new AppError(
       `OpenAI analysis failed with status ${response.status}. ${body}`,
-      statusCode,
+      providerErrorStatusCode(response.status),
       `${errorPrefix}_OPENAI_FAILED`,
     );
   }

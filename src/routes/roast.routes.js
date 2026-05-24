@@ -261,6 +261,8 @@ router.post('/:roastId/analyze', authMiddleware, analyzeRepo);
  *         description: Missing or invalid bearer token
  *       404:
  *         description: Roast report or issue not found
+ *       429:
+ *         description: AI provider quota or rate limit exceeded
  *       502:
  *         description: AI regeneration provider failed
  */
