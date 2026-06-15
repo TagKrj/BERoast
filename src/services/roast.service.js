@@ -1,4 +1,5 @@
 import Repository from '../models/repository.model.js';
+import AnalysisUsage from '../models/analysisUsage.model.js';
 import RoastIssue from '../models/roastIssue.model.js';
 import RoastRun from '../models/roastRun.model.js';
 import {
@@ -12,6 +13,90 @@ import {
 import { callProviderJson } from './analysis/llmClient.service.js';
 import AppError from '../utils/appError.js';
 import { formatDateDisplay, toTitleCase } from '../utils/formatters.js';
+
+const DAILY_ANALYSIS_LIMIT = Number.parseInt(
+  process.env.DAILY_ANALYSIS_LIMIT || '10',
+  10,
+);
+const VIETNAM_TIME_OFFSET_MS = 7 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const getVietnamDayWindow = (now = new Date()) => {
+  const vietnamTime = new Date(now.getTime() + VIETNAM_TIME_OFFSET_MS);
+  vietnamTime.setUTCHours(0, 0, 0, 0);
+
+  const start = new Date(vietnamTime.getTime() - VIETNAM_TIME_OFFSET_MS);
+  const end = new Date(start.getTime() + DAY_MS);
+
+  return {
+    start,
+    end,
+  };
+};
+
+const getVietnamDayKey = (now = new Date()) =>
+  new Date(now.getTime() + VIETNAM_TIME_OFFSET_MS).toISOString().slice(0, 10);
+
+const formatRetryAfter = (milliseconds) => {
+  const totalMinutes = Math.max(1, Math.ceil(milliseconds / 60_000));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${hours}h${String(minutes).padStart(2, '0')}`;
+};
+
+const assertDailyAnalysisQuota = async ({
+  userId,
+  roastRunId,
+  now = new Date(),
+}) => {
+  const limit = Number.isFinite(DAILY_ANALYSIS_LIMIT)
+    ? Math.max(1, DAILY_ANALYSIS_LIMIT)
+    : 10;
+  const { start, end } = getVietnamDayWindow(now);
+  const dayKey = getVietnamDayKey(now);
+  const used = await AnalysisUsage.countDocuments({
+    userId,
+    dayKey,
+    usedAt: { $gte: start, $lt: end },
+  });
+
+  if (used >= limit) {
+    const retryAfterMs = Math.max(0, end.getTime() - now.getTime());
+    const retryAfterDisplay = formatRetryAfter(retryAfterMs);
+
+    throw new AppError(
+      `Daily analysis limit reached. Please try again in ${retryAfterDisplay}.`,
+      429,
+      'DAILY_ANALYSIS_LIMIT_EXCEEDED',
+      {
+        limit,
+        used,
+        remaining: 0,
+        resetAt: end.toISOString(),
+        retryAfterMs,
+        retryAfterDisplay,
+        timezone: 'Asia/Ho_Chi_Minh',
+      },
+    );
+  }
+
+  await AnalysisUsage.create({
+    userId,
+    roastRunId,
+    dayKey,
+    timezone: 'Asia/Ho_Chi_Minh',
+    usedAt: now,
+    resetAt: end,
+  });
+
+  return {
+    limit,
+    used: used + 1,
+    remaining: limit - used - 1,
+    resetAt: end,
+  };
+};
 
 const defaultSuggestionForIssue = (issue) => {
   if (issue.type === 'security') {
@@ -495,6 +580,11 @@ export const analyzeCheckedRepository = async ({
       'OPENAI_API_KEY_REQUIRED',
     );
   }
+
+  await assertDailyAnalysisQuota({
+    userId,
+    roastRunId: roastRun._id,
+  });
 
   roastRun.status = 'analyzing';
   roastRun.error = undefined;

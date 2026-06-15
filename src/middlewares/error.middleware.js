@@ -7,6 +7,9 @@ const errorMiddleware = (err, req, res, next) => {
     ...(err.code && {
       error: {
         code: err.code,
+        ...(err.details && {
+          details: err.details,
+        }),
       },
     }),
   });

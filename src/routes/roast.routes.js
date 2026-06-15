@@ -172,6 +172,23 @@ router.get('/history', authMiddleware, listRoastHistory);
  *         description: Roast report not found
  *       409:
  *         description: Roast is not ready for analysis
+ *       429:
+ *         description: Daily analysis limit exceeded
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: false
+ *               message: "Daily analysis limit reached. Please try again in 5h30."
+ *               error:
+ *                 code: "DAILY_ANALYSIS_LIMIT_EXCEEDED"
+ *                 details:
+ *                   limit: 10
+ *                   used: 10
+ *                   remaining: 0
+ *                   resetAt: "2026-06-15T17:00:00.000Z"
+ *                   retryAfterMs: 19800000
+ *                   retryAfterDisplay: "5h30"
+ *                   timezone: "Asia/Ho_Chi_Minh"
  *       500:
  *         description: Server error
  */

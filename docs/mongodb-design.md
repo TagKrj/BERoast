@@ -236,6 +236,36 @@ Notes:
 - `rulesHash` invalidates cache when the relevant detection rules change.
 - Cache stores raw detections only; validation still runs with the current validation prompt/rules.
 
+### `analysis_usages`
+
+Stores one usage event whenever a user starts the expensive analysis step. The repository check step does not create a usage event, so users can check repository metadata without consuming the daily analysis quota.
+
+```js
+{
+  _id: ObjectId,
+  userId: ObjectId,
+  roastRunId: ObjectId,
+  dayKey: "2026-06-15",
+  timezone: "Asia/Ho_Chi_Minh",
+  usedAt: Date,
+  resetAt: Date,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+Indexes:
+
+- Daily user quota lookup: `{ userId: 1, dayKey: 1, usedAt: -1 }`
+- Daily audit: `{ dayKey: 1, usedAt: -1 }`
+- Roast usage lookup: `{ roastRunId: 1 }`
+
+Notes:
+
+- This collection is separate from `roast_runs` so deleting a report from history does not restore the user's daily quota.
+- The backend blocks `POST /api/roasts/:roastId/analyze` after `DAILY_ANALYSIS_LIMIT` usage events in the current Vietnam day.
+- The quota error returns `retryAfterDisplay` such as `5h30` and `resetAt` so the frontend can show when analysis becomes available again.
+
 ### `refresh_tokens`
 
 Optional collection for refresh-token rotation if the backend uses persistent sessions.
@@ -295,6 +325,7 @@ Security rules:
 users 1 --- N roast_runs
 repositories 1 --- N roast_runs
 roast_runs 1 --- N roast_issues
+users 1 --- N analysis_usages
 users 1 --- N refresh_tokens
 users 1 --- N user_ai_keys (optional)
 ```
@@ -316,6 +347,6 @@ The report detail endpoint should load:
 | `GET /api/auth/github/callback`     | `users`, optional `refresh_tokens` |
 | `GET /api/me`                       | `users`                            |
 | `POST /api/repos/check`             | `repositories`, `roast_runs`       |
-| `POST /api/roasts/:roastId/analyze` | `roast_runs`, `roast_issues`       |
+| `POST /api/roasts/:roastId/analyze` | `analysis_usages`, `roast_runs`, `roast_issues` |
 | `GET /api/roasts/history`           | `roast_runs`                       |
 | `GET /api/roasts/:roastId`          | `roast_runs`, `roast_issues`       |

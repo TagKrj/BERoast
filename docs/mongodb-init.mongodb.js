@@ -275,6 +275,36 @@ await ensureCollection('analysis_file_caches', {
   validationAction: 'error',
 });
 
+await ensureCollection('analysis_usages', {
+  validator: {
+    $jsonSchema: {
+      bsonType: 'object',
+      required: [
+        'userId',
+        'roastRunId',
+        'dayKey',
+        'timezone',
+        'usedAt',
+        'resetAt',
+        'createdAt',
+        'updatedAt',
+      ],
+      properties: {
+        userId: { bsonType: 'objectId' },
+        roastRunId: { bsonType: 'objectId' },
+        dayKey: { bsonType: 'string' },
+        timezone: { bsonType: 'string' },
+        usedAt: { bsonType: 'date' },
+        resetAt: { bsonType: 'date' },
+        createdAt: { bsonType: 'date' },
+        updatedAt: { bsonType: 'date' },
+      },
+    },
+  },
+  validationLevel: 'strict',
+  validationAction: 'error',
+});
+
 await ensureCollection('refresh_tokens', {
   validator: {
     $jsonSchema: {
@@ -359,6 +389,10 @@ await database.analysis_file_caches.createIndex({
   repositoryFullName: 1,
   detectedAt: -1,
 });
+
+await database.analysis_usages.createIndex({ userId: 1, dayKey: 1, usedAt: -1 });
+await database.analysis_usages.createIndex({ dayKey: 1, usedAt: -1 });
+await database.analysis_usages.createIndex({ roastRunId: 1 });
 
 await database.refresh_tokens.createIndex({ tokenHash: 1 }, { unique: true });
 await database.refresh_tokens.createIndex({ userId: 1, createdAt: -1 });
