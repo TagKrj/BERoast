@@ -22,7 +22,15 @@ const roastIssueSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['code_smell', 'security'],
+      enum: [
+        'code_smell',
+        'maintainability',
+        'architecture',
+        'security',
+        'robustness',
+        'operational',
+        'interaction',
+      ],
       required: true,
     },
     index: {
@@ -57,10 +65,15 @@ const roastIssueSchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
+    priority: {
+      type: String,
+      enum: ['p0', 'p1', 'p2', 'p3'],
+      required: true,
+    },
     severity: {
       type: String,
       enum: ['low', 'medium', 'high'],
-      required: true,
+      default: undefined,
     },
     ruleId: {
       type: String,
@@ -102,7 +115,7 @@ const roastIssueSchema = new mongoose.Schema(
 );
 
 roastIssueSchema.index({ roastRunId: 1, type: 1, index: 1 });
-roastIssueSchema.index({ roastRunId: 1, severity: 1 });
+roastIssueSchema.index({ roastRunId: 1, priority: 1 });
 roastIssueSchema.index({ userId: 1, createdAt: -1 });
 
 const RoastIssue = mongoose.model('RoastIssue', roastIssueSchema);

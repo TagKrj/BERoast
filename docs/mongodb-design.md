@@ -133,8 +133,13 @@ Stores one check or analysis run. This document is optimized for history list an
     metrics: {
       fileCount: Number,
       sizeLabel: "small" | "medium" | "large",
-      codeSmellCount: Number,
-      securityCount: Number
+      totalIssues: Number,
+      totalMaintainability: Number,
+      totalArchitecture: Number,
+      totalSecurity: Number,
+      totalRobustness: Number,
+      totalOperational: Number,
+      totalInteraction: Number
     },
     completedAt: Date
   },
@@ -162,7 +167,7 @@ Notes:
 
 ### `roast_issues`
 
-Stores individual code smell and security findings. This avoids unbounded issue arrays inside `roast_runs`.
+Stores individual domain findings. This avoids unbounded issue arrays inside `roast_runs`.
 
 ```js
 {
@@ -170,7 +175,7 @@ Stores individual code smell and security findings. This avoids unbounded issue 
   roastRunId: ObjectId,
   userId: ObjectId,
   repositoryId: ObjectId,
-  type: "code_smell" | "security",
+  type: "maintainability" | "architecture" | "security" | "robustness" | "operational" | "interaction",
   index: Number,
   filePath: String,
   title: String,
@@ -178,7 +183,7 @@ Stores individual code smell and security findings. This avoids unbounded issue 
   suggestion: String,
   startLine: Number,
   endLine: Number,
-  severity: "low" | "medium" | "high",
+  priority: "p0" | "p1" | "p2" | "p3",
   ruleId: String,
   confidence: Number,
   fixPrompt: String,
@@ -193,13 +198,14 @@ Stores individual code smell and security findings. This avoids unbounded issue 
 Indexes:
 
 - Report issue list: `{ roastRunId: 1, type: 1, index: 1 }`
-- Filtering by severity: `{ roastRunId: 1, severity: 1 }`
+- Filtering by priority: `{ roastRunId: 1, priority: 1 }`
 - User-level audit: `{ userId: 1, createdAt: -1 }`
 
 Notes:
 
-- `type` maps directly to the two UI sections: code smells and security issues.
+- `type` maps directly to the six UI sections: maintainability, architecture, security, robustness, operational, and interaction.
 - Store `startLine` and `endLine` as numbers so the frontend can display `line X-Y`.
+- `priority` maps to the production urgency scale shown in the report: P0 Production blocker, P1 Must address before scaling, P2 Should address during continued development, and P3 Acceptable MVP debt.
 - `suggestion` is shown in the issue detail card as "Suggestions on how to fix it".
 - `fixPrompt`, `fixPromptVersion`, `fixPromptInstruction`, `fixPromptInstructionAnalysis`, and `fixPromptGeneratedAt` support the Generate prompt / Regenerate prompt action per issue.
 - Regeneration requires `fixPromptInstruction`; the backend sends that instruction to system Gemini so the new prompt is generated from the user's requested change instead of rotating automatically.
@@ -214,7 +220,7 @@ Stores raw per-file AI detection results so unchanged files do not need to be se
   repositoryFullName: String,
   filePath: String,
   fileSha: String,
-  analysisType: "code_smell" | "security",
+  analysisType: "maintainability" | "architecture" | "security" | "robustness" | "operational" | "interaction",
   provider: "system_gemini" | "user_openai",
   model: String,
   rulesHash: String,
@@ -341,12 +347,12 @@ The report detail endpoint should load:
 
 ## Suggested API To Collection Mapping
 
-| Endpoint                            | Collections                        |
-| ----------------------------------- | ---------------------------------- |
-| `GET /api/auth/github`              | none                               |
-| `GET /api/auth/github/callback`     | `users`, optional `refresh_tokens` |
-| `GET /api/me`                       | `users`                            |
-| `POST /api/repos/check`             | `repositories`, `roast_runs`       |
+| Endpoint                            | Collections                                     |
+| ----------------------------------- | ----------------------------------------------- |
+| `GET /api/auth/github`              | none                                            |
+| `GET /api/auth/github/callback`     | `users`, optional `refresh_tokens`              |
+| `GET /api/me`                       | `users`                                         |
+| `POST /api/repos/check`             | `repositories`, `roast_runs`                    |
 | `POST /api/roasts/:roastId/analyze` | `analysis_usages`, `roast_runs`, `roast_issues` |
-| `GET /api/roasts/history`           | `roast_runs`                       |
-| `GET /api/roasts/:roastId`          | `roast_runs`, `roast_issues`       |
+| `GET /api/roasts/history`           | `roast_runs`                                    |
+| `GET /api/roasts/:roastId`          | `roast_runs`, `roast_issues`                    |

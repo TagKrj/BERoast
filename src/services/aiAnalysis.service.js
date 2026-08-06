@@ -1,10 +1,7 @@
 import AppError from '../utils/appError.js';
-import { analyzeCodeSmells } from './analysis/codeSmellAnalysis.service.js';
-import { analyzeSecurityIssues } from './analysis/securityAnalysis.service.js';
-import {
-  fallbackCodeSmells,
-  fallbackSecurityIssues,
-} from './analysis/localFallbackAnalysis.service.js';
+import { analysisDomainValues } from './analysis/analysisDomains.js';
+import { analyzeDomain } from './analysis/domainAnalysis.service.js';
+import { fallbackDomainIssues } from './analysis/localFallbackAnalysis.service.js';
 import { normalizeFinalFindings } from './analysis/findingNormalizer.service.js';
 import { createConcurrencyLimiter } from '../utils/concurrency.js';
 
@@ -59,27 +56,30 @@ export const classifyRepositorySize = async (stats) => {
   };
 };
 
-const severityWeight = {
-  low: 1,
-  medium: 2,
-  high: 3,
+const priorityWeight = {
+  p0: 4,
+  p1: 3,
+  p2: 2,
+  p3: 1,
 };
 const ANALYSIS_MAX_CONCURRENT = Number.parseInt(
   process.env.ANALYSIS_MAX_CONCURRENT || '5',
   10,
 );
 
-const calculateScore = ({ codeSmells, security }) => {
-  const codeSmellPenalty = codeSmells.reduce(
-    (total, item) => total + severityWeight[item.severity] * 3,
-    0,
-  );
-  const securityPenalty = security.reduce(
-    (total, item) => total + severityWeight[item.severity] * 7,
-    0,
-  );
+const calculateScore = (domainFindings) => {
+  const penalty = analysisDomainValues().reduce((total, domain) => {
+    const findings = domainFindings[domain.key] || [];
+    const multiplier = domain.scorePenaltyMultiplier || 3;
+    const domainPenalty = findings.reduce(
+      (sum, item) => sum + (priorityWeight[item.priority] || 1) * multiplier,
+      0,
+    );
 
-  return Math.max(0, 100 - codeSmellPenalty - securityPenalty);
+    return total + domainPenalty;
+  }, 0);
+
+  return Math.max(0, 100 - penalty);
 };
 
 const gradeFromScore = (score) => {
@@ -138,48 +138,55 @@ export const analyzeRepositoryCode = async ({
       ? 'local-fallback-after-gemini-failure'
       : 'local-fallback';
   const runLimited = createConcurrencyLimiter(ANALYSIS_MAX_CONCURRENT);
-  const [codeSmellAnalysis, securityAnalysis] = await Promise.all([
-    runAnalysisStep({
-      provider,
-      codeSample,
-      fallbackModel,
-      fallback: fallbackCodeSmells,
-      run: () =>
-        analyzeCodeSmells({ codeSample, provider, openAiApiKey, runLimited }),
-    }),
-    runAnalysisStep({
-      provider,
-      codeSample,
-      fallbackModel,
-      fallback: fallbackSecurityIssues,
-      run: () =>
-        analyzeSecurityIssues({
-          codeSample,
-          provider,
-          openAiApiKey,
-          runLimited,
-        }),
-    }),
-  ]);
-
-  const codeSmells = normalizeFinalFindings(codeSmellAnalysis.findings, {
-    type: 'code_smell',
-  });
-  const security = normalizeFinalFindings(securityAnalysis.findings, {
-    type: 'security',
-  });
-  const score = calculateScore({ codeSmells, security });
+  const analysisEntries = await Promise.all(
+    analysisDomainValues().map((domain) =>
+      runAnalysisStep({
+        provider,
+        codeSample,
+        fallbackModel,
+        fallback: (sample) =>
+          fallbackDomainIssues({
+            domainKey: domain.key,
+            snippets: sample.snippets,
+          }),
+        run: () =>
+          analyzeDomain({
+            codeSample,
+            domain,
+            provider,
+            openAiApiKey,
+            runLimited,
+          }),
+      }).then((analysis) => [domain.key, analysis]),
+    ),
+  );
+  const analyses = Object.fromEntries(analysisEntries);
+  const domains = Object.fromEntries(
+    analysisDomainValues().map((domain) => [
+      domain.key,
+      normalizeFinalFindings(analyses[domain.key]?.findings || [], {
+        type: domain.key,
+      }),
+    ]),
+  );
+  const score = calculateScore(domains);
   const grade = gradeFromScore(score);
+  const model =
+    analysisDomainValues()
+      .map((domain) => analyses[domain.key]?.model)
+      .find(Boolean) || process.env.GEMINI_ANALYSIS_MODEL;
 
   return {
     provider,
-    model:
-      codeSmellAnalysis.model ||
-      securityAnalysis.model ||
-      process.env.GEMINI_ANALYSIS_MODEL,
+    model,
     grade,
     score,
-    codeSmells,
-    security,
+    domains,
+    maintainability: domains.maintainability,
+    architecture: domains.architecture,
+    security: domains.security,
+    robustness: domains.robustness,
+    operational: domains.operational,
+    interaction: domains.interaction,
   };
 };

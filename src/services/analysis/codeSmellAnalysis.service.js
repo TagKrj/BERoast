@@ -12,7 +12,7 @@ import { fallbackCodeSmells } from './localFallbackAnalysis.service.js';
 import { loadRuleFile } from './ruleLoader.service.js';
 
 const getFileName = (filePath) => filePath.split('/').pop() || filePath;
-const ANALYSIS_TYPE = 'code_smell';
+const ANALYSIS_TYPE = 'maintainability';
 const DETECTION_BATCH_SIZE = Number.parseInt(
   process.env.ANALYSIS_DETECTION_BATCH_SIZE || '3',
   10,
@@ -66,7 +66,7 @@ IMPORTANT:
     "evidence": "<code snippet or description>",
     "startLine": 1,
     "endLine": 1,
-    "severity": "low | medium | high",
+    "priority": "P0 | P1 | P2 | P3",
     "metrics": {
       "method_length": "short | medium | long",
       "class_size": "small | medium | large",
@@ -76,11 +76,16 @@ IMPORTANT:
     }
   }
 ]
-7. The suggestion MUST be issue-specific:
+7. Priority classification:
+   - P0 = Production blocker. Must be fixed before deployment.
+   - P1 = Must address before scaling. May not block the MVP, but must be addressed before significant growth.
+   - P2 = Should address during continued development. Include in the near-term development backlog.
+   - P3 = Acceptable MVP debt. Acceptable temporarily; monitor and revisit later.
+8. The suggestion MUST be issue-specific:
    - Reference the exact smell and code context.
    - Explain what to change, where to start, and what to verify.
    - Do NOT return generic templates such as "refactor this file" unless you also include the concrete refactor direction.
-8. If no smells found, return:
+9. If no smells found, return:
 []
 
 CODE_SMELL_RULE_1.md:
@@ -143,8 +148,8 @@ Instructions:
     "suggestion": "<clear suggestion on how to fix this specific code smell>",
     "startLine": 1,
     "endLine": 1,
-    "severity": "low | medium | high",
-    "severityDisplay": "Low | Medium | High"
+    "priority": "P0 | P1 | P2 | P3",
+    "priorityDisplay": "P0 – Production blocker | P1 – Must address before scaling | P2 – Should address during continued development | P3 – Acceptable MVP debt"
   }
 ]
 7. Important:
@@ -152,6 +157,7 @@ Instructions:
    - Ensure output is clean, consistent, and deduplicated
    - suggestion MUST be specific to the issue title, file, evidence, and line range
    - suggestion MUST NOT be a generic fallback sentence shared across unrelated smells
+   - priority MUST use P0, P1, P2, or P3 based on production impact and urgency
 8. If no valid smells remain:
 []
 
@@ -286,10 +292,7 @@ export const analyzeCodeSmells = async ({
   const rawDetections = [];
   let model = null;
   const repositoryFullName = codeSample.repositoryFullName || 'unknown';
-  const rulesHash = rulesContentHash(
-    'code-smell-detection-suggestion-v2',
-    rule1,
-  );
+  const rulesHash = rulesContentHash('code-smell-detection-priority-v3', rule1);
   const { cachedDetections, missingFiles } = await getCachedFileDetections({
     analysisType: ANALYSIS_TYPE,
     files: codeSample.snippets,

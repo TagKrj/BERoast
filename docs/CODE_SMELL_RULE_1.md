@@ -157,7 +157,7 @@ description
 evidence
 startLine
 endLine
-severity
+priority
 heuristic metrics
 
 Output MUST follow this RAW detection JSON structure:
@@ -173,7 +173,7 @@ Output MUST follow this RAW detection JSON structure:
     "evidence": "Nested if/else blocks and multiple unrelated operations inside the same function.",
     "startLine": 12,
     "endLine": 86,
-    "severity": "medium",
+    "priority": "P2",
     "metrics": {
       "method_length": "long",
       "class_size": "medium",
@@ -186,10 +186,16 @@ Output MUST follow this RAW detection JSON structure:
 
 Rules:
 
-severity must be:
-low
-medium
-high
+priority must be:
+P0
+P1
+P2
+P3
+Priority definitions:
+- P0: Production blocker. Must be fixed before deployment.
+- P1: Must address before scaling. May not block the MVP, but must be addressed before significant growth.
+- P2: Should address during continued development. Should be included in the near-term development backlog.
+- P3: Acceptable MVP debt. Acceptable temporarily; monitor and revisit later.
 startLine and endLine must be estimated if exact values are unavailable.
 title must be short, readable, and UI-friendly.
 description must clearly explain why the smell was detected.

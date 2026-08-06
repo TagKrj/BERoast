@@ -66,7 +66,7 @@ IMPORTANT:
     "evidence": "<code snippet or description>",
     "startLine": 1,
     "endLine": 1,
-    "severity": "low | medium | high",
+    "priority": "P0 | P1 | P2 | P3",
     "metrics": {
       "tainted_input_flow": "none | possible | clear",
       "auth_boundary": "none | partial | strong",
@@ -76,12 +76,17 @@ IMPORTANT:
     }
   }
 ]
-7. The suggestion MUST be issue-specific:
+7. Priority classification:
+   - P0 = Production blocker. Must be fixed before deployment.
+   - P1 = Must address before scaling. May not block the MVP, but must be addressed before significant growth.
+   - P2 = Should address during continued development. Include in the near-term development backlog.
+   - P3 = Acceptable MVP debt. Acceptable temporarily; monitor and revisit later.
+8. The suggestion MUST be issue-specific:
    - Reference the exact vulnerability, trust boundary, or unsafe API.
    - Explain the safe replacement or validation strategy.
    - Include the security test or attack path that should be blocked.
    - Do NOT return generic templates such as "validate input" unless you name the exact input/boundary/pattern.
-8. If no security issues found, return:
+9. If no security issues found, return:
 []
 
 SECURITY_RULE_1.md:
@@ -145,8 +150,8 @@ Instructions:
     "suggestion": "<clear suggestion on how to fix this specific security issue>",
     "startLine": 1,
     "endLine": 1,
-    "severity": "low | medium | high",
-    "severityDisplay": "Low | Medium | High"
+    "priority": "P0 | P1 | P2 | P3",
+    "priorityDisplay": "P0 – Production blocker | P1 – Must address before scaling | P2 – Should address during continued development | P3 – Acceptable MVP debt"
   }
 ]
 7. Important:
@@ -154,6 +159,7 @@ Instructions:
    - Ensure output is clean, consistent, and deduplicated
    - suggestion MUST be specific to the issue title, file, evidence, and line range
    - suggestion MUST NOT be a generic fallback sentence shared across unrelated issues
+   - priority MUST use P0, P1, P2, or P3 based on production impact and urgency
 8. If no valid security issues remain:
 []
 
@@ -288,7 +294,7 @@ export const analyzeSecurityIssues = async ({
   const rawDetections = [];
   let model = null;
   const repositoryFullName = codeSample.repositoryFullName || 'unknown';
-  const rulesHash = rulesContentHash('security-detection-suggestion-v2', rule1);
+  const rulesHash = rulesContentHash('security-detection-priority-v3', rule1);
   const { cachedDetections, missingFiles } = await getCachedFileDetections({
     analysisType: ANALYSIS_TYPE,
     files: codeSample.snippets,

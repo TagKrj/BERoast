@@ -7,10 +7,21 @@ import {
   classifyRepositorySize,
 } from './aiAnalysis.service.js';
 import {
+  ANALYSIS_DOMAIN_KEYS,
+  domainIssueCountKey,
+} from './analysis/analysisDomains.js';
+import {
   getRepositoryMetadata,
   loadRepositoryCodeSample,
 } from './githubRepo.service.js';
 import { callProviderJson } from './analysis/llmClient.service.js';
+import {
+  normalizePriority,
+  priorityColor,
+  priorityDefinition,
+  priorityDisplay,
+  priorityGuidance,
+} from './analysis/findingNormalizer.service.js';
 import AppError from '../utils/appError.js';
 import { formatDateDisplay, toTitleCase } from '../utils/formatters.js';
 
@@ -98,27 +109,60 @@ const assertDailyAnalysisQuota = async ({
   };
 };
 
+const domainDisplayName = (type) =>
+  String(type || '')
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
 const defaultSuggestionForIssue = (issue) => {
   if (issue.type === 'security') {
     return `Fix "${issue.title}" in ${issue.filePath} by addressing the exact risky pattern described in the finding. Validate the untrusted input or trust boundary involved, replace the unsafe implementation with a safer one, and add a regression test for this specific security path.`;
   }
 
-  return `Fix "${issue.title}" in ${issue.filePath} by targeting the exact code smell described in the finding. Make the smallest behavior-preserving refactor, keep the change focused on the affected block, and add a focused test or manual verification for the behavior.`;
+  return `Fix "${issue.title}" in ${issue.filePath} by targeting the exact ${domainDisplayName(issue.type).toLowerCase()} issue described in the finding. Make the smallest behavior-preserving change, keep the change focused on the affected block, and add a focused test or manual verification for the behavior.`;
 };
 
-const issueToResponse = (issue, index) => ({
+const encodeGithubPath = (value) =>
+  String(value || '')
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+
+const buildGithubFileUrl = ({ filePath, repositoryUrl, defaultBranch, line }) => {
+  if (!repositoryUrl || !defaultBranch || !filePath) {
+    return null;
+  }
+
+  const baseUrl = repositoryUrl.replace(/\/$/, '');
+  const branch = encodeURIComponent(defaultBranch);
+  const path = encodeGithubPath(filePath);
+  const lineHash = line ? `#L${line}` : '';
+
+  return `${baseUrl}/blob/${branch}/${path}${lineHash}`;
+};
+
+const issueToResponse = (issue, index, roastRun) => ({
   id: issue.id,
-  type: issue.type,
+  type: issue.type === 'code_smell' ? 'maintainability' : issue.type,
   index: issue.index || index + 1,
   fileName: issue.filePath.split('/').pop(),
   filePath: issue.filePath,
+  fileUrl: buildGithubFileUrl({
+    repositoryUrl: roastRun?.repoSnapshot?.htmlUrl,
+    defaultBranch: roastRun?.repoSnapshot?.defaultBranch,
+    filePath: issue.filePath,
+    line: issue.startLine,
+  }),
   title: issue.title,
   description: issue.description,
   suggestion: issue.suggestion || defaultSuggestionForIssue(issue),
   startLine: issue.startLine,
   endLine: issue.endLine,
-  severity: issue.severity,
-  severityDisplay: toTitleCase(issue.severity),
+  priority: priorityDisplay(issue.priority || issue.severity),
+  priorityDisplay: `${priorityDisplay(issue.priority || issue.severity)} – ${priorityDefinition(issue.priority || issue.severity)}`,
+  priorityDescription: priorityGuidance(issue.priority || issue.severity),
+  priorityColor: priorityColor(issue.priority || issue.severity),
   fixPrompt: issue.fixPrompt || null,
   fixPromptVersion: issue.fixPromptVersion || 0,
   fixPromptInstruction: issue.fixPromptInstruction || null,
@@ -128,32 +172,36 @@ const issueToResponse = (issue, index) => ({
     : null,
 });
 
-const summarizeIssuesBySeverity = (issues) =>
+const summarizeIssuesByPriority = (issues) =>
   issues.reduce(
     (summary, issue) => {
       summary.all += 1;
+      const priority = normalizePriority(issue.priority, issue.severity);
 
-      if (issue.severity === 'high') {
-        summary.totalHigh += 1;
-      } else if (issue.severity === 'medium') {
-        summary.totalMedium += 1;
-      } else if (issue.severity === 'low') {
-        summary.totalLow += 1;
+      if (priority === 'p0') {
+        summary.totalP0 += 1;
+      } else if (priority === 'p1') {
+        summary.totalP1 += 1;
+      } else if (priority === 'p2') {
+        summary.totalP2 += 1;
+      } else if (priority === 'p3') {
+        summary.totalP3 += 1;
       }
 
       return summary;
     },
     {
       all: 0,
-      totalHigh: 0,
-      totalMedium: 0,
-      totalLow: 0,
+      totalP0: 0,
+      totalP1: 0,
+      totalP2: 0,
+      totalP3: 0,
     },
   );
 
-const buildIssueGroupResponse = (issues) => ({
-  ...summarizeIssuesBySeverity(issues),
-  items: issues.map(issueToResponse),
+const buildIssueGroupResponse = (issues, roastRun) => ({
+  ...summarizeIssuesByPriority(issues),
+  items: issues.map((issue, index) => issueToResponse(issue, index, roastRun)),
 });
 
 const normalizePromptInstruction = (value) => {
@@ -218,12 +266,17 @@ const buildIssueFixPrompt = ({
   instruction,
   instructionAnalysis,
 }) => {
-  const issueType =
-    issue.type === 'security' ? 'security issue' : 'code smell issue';
+  const issueType = `${domainDisplayName(issue.type).toLowerCase()} issue`;
   const lineRange =
     issue.startLine === issue.endLine
       ? `${issue.startLine}`
       : `${issue.startLine}-${issue.endLine}`;
+  const fileUrl = buildGithubFileUrl({
+    repositoryUrl: roastRun.repoSnapshot.htmlUrl,
+    defaultBranch: roastRun.repoSnapshot.defaultBranch,
+    filePath: issue.filePath,
+    line: issue.startLine,
+  });
 
   return [
     `You are a senior software engineer. Help me fix this ${issueType} in my repository.`,
@@ -231,8 +284,9 @@ const buildIssueFixPrompt = ({
     `Repository: ${roastRun.repoSnapshot.fullName}`,
     `Repository URL: ${roastRun.repoSnapshot.htmlUrl}`,
     `File: ${issue.filePath}`,
+    ...(fileUrl ? [`File URL: ${fileUrl}`] : []),
     `Lines: ${lineRange}`,
-    `Severity: ${toTitleCase(issue.severity)}`,
+    `Priority: ${priorityDisplay(issue.priority || issue.severity)} – ${priorityDefinition(issue.priority || issue.severity)}`,
     `Issue title: ${issue.title}`,
     '',
     'Issue description:',
@@ -273,12 +327,17 @@ const buildPromptGenerationAiPrompt = ({
   previousPrompt,
   generationNumber,
 }) => {
-  const issueType =
-    issue.type === 'security' ? 'security issue' : 'code smell issue';
+  const issueType = `${domainDisplayName(issue.type).toLowerCase()} issue`;
   const lineRange =
     issue.startLine === issue.endLine
       ? `${issue.startLine}`
       : `${issue.startLine}-${issue.endLine}`;
+  const fileUrl = buildGithubFileUrl({
+    repositoryUrl: roastRun.repoSnapshot.htmlUrl,
+    defaultBranch: roastRun.repoSnapshot.defaultBranch,
+    filePath: issue.filePath,
+    line: issue.startLine,
+  });
 
   return `
 You are a senior software engineering prompt designer.
@@ -304,8 +363,9 @@ Prompt generation:
 Issue:
 - Type: ${issueType}
 - File: ${issue.filePath}
+- File URL: ${fileUrl || 'Not available'}
 - Lines: ${lineRange}
-- Severity: ${toTitleCase(issue.severity)}
+- Priority: ${priorityDisplay(issue.priority || issue.severity)} – ${priorityDefinition(issue.priority || issue.severity)}
 - Title: ${issue.title}
 - Description: ${issue.description}
 - Suggested direction: ${issue.suggestion || defaultSuggestionForIssue(issue)}
@@ -440,11 +500,28 @@ const buildCheckResponse = (roastRun) => ({
   }),
 });
 
-const buildReportResponse = ({ roastRun, codeSmells, security }) => {
-  const repoSeveritySummary = summarizeIssuesBySeverity([
-    ...codeSmells,
-    ...security,
-  ]);
+const groupIssuesByDomain = (issues) =>
+  Object.fromEntries(
+    ANALYSIS_DOMAIN_KEYS.map((domainKey) => [
+      domainKey,
+      issues.filter(
+        (issue) =>
+          issue.type === domainKey ||
+          (domainKey === 'maintainability' && issue.type === 'code_smell'),
+      ),
+    ]),
+  );
+
+const buildReportResponse = ({ roastRun, issues }) => {
+  const groupedIssues = groupIssuesByDomain(issues);
+  const repoPrioritySummary = summarizeIssuesByPriority(issues);
+  const domainCounts = Object.fromEntries(
+    ANALYSIS_DOMAIN_KEYS.map((domainKey) => [
+      domainIssueCountKey(domainKey),
+      roastRun.result.metrics?.[domainIssueCountKey(domainKey)] ??
+        groupedIssues[domainKey].length,
+    ]),
+  );
 
   return {
     id: roastRun.id,
@@ -455,6 +532,7 @@ const buildReportResponse = ({ roastRun, codeSmells, security }) => {
       name: roastRun.repoSnapshot.name,
       fullName: roastRun.repoSnapshot.fullName,
       htmlUrl: roastRun.repoSnapshot.htmlUrl,
+      defaultBranch: roastRun.repoSnapshot.defaultBranch,
     },
     grade: roastRun.result.grade,
     score: roastRun.result.score,
@@ -462,21 +540,24 @@ const buildReportResponse = ({ roastRun, codeSmells, security }) => {
       fileCount: roastRun.result.metrics.fileCount,
       sizeLabel: roastRun.result.metrics.sizeLabel,
       sizeDisplay: toTitleCase(roastRun.result.metrics.sizeLabel),
-      totalCodeSmell: roastRun.result.metrics.codeSmellCount,
-      totalSecurity: roastRun.result.metrics.securityCount,
-      totalHigh: repoSeveritySummary.totalHigh,
-      totalMedium: repoSeveritySummary.totalMedium,
-      totalLow: repoSeveritySummary.totalLow,
+      totalIssues: issues.length,
+      ...domainCounts,
+      totalP0: repoPrioritySummary.totalP0,
+      totalP1: repoPrioritySummary.totalP1,
+      totalP2: repoPrioritySummary.totalP2,
+      totalP3: repoPrioritySummary.totalP3,
       analysisType: roastRun.ai.analysisProvider,
       analysisTypeDisplay:
         roastRun.ai.analysisProvider === 'user_openai'
           ? 'Personal OpenAI API key analysis'
           : 'Gemini default system analysis',
     },
-    issues: {
-      codeSmells: buildIssueGroupResponse(codeSmells),
-      security: buildIssueGroupResponse(security),
-    },
+    issues: Object.fromEntries(
+      ANALYSIS_DOMAIN_KEYS.map((domainKey) => [
+        domainKey,
+        buildIssueGroupResponse(groupedIssues[domainKey], roastRun),
+      ]),
+    ),
   };
 };
 
@@ -485,12 +566,18 @@ const buildHistoryItem = (roastRun) => ({
   grade: roastRun.result.grade,
   repositoryFullName: roastRun.repoSnapshot.fullName,
   repositoryUrl: roastRun.repoSnapshot.htmlUrl,
+  defaultBranch: roastRun.repoSnapshot.defaultBranch,
   roastDate: roastRun.result.roastDate.toISOString(),
   roastDateDisplay: roastRun.result.roastDateDisplay,
   sizeLabel: roastRun.result.metrics.sizeLabel,
   sizeDisplay: toTitleCase(roastRun.result.metrics.sizeLabel),
-  totalCodeSmell: roastRun.result.metrics.codeSmellCount,
-  totalSecurity: roastRun.result.metrics.securityCount,
+  totalIssues: roastRun.result.metrics.totalIssues || 0,
+  ...Object.fromEntries(
+    ANALYSIS_DOMAIN_KEYS.map((domainKey) => [
+      domainIssueCountKey(domainKey),
+      roastRun.result.metrics?.[domainIssueCountKey(domainKey)] || 0,
+    ]),
+  ),
   analysisType: roastRun.ai.analysisProvider,
 });
 
@@ -601,28 +688,20 @@ export const analyzeCheckedRepository = async ({
     });
 
     const now = new Date();
-    const codeSmellDocs = analysis.codeSmells.map((issue, index) => ({
-      roastRunId: roastRun._id,
-      userId,
-      repositoryId: roastRun.repositoryId,
-      type: 'code_smell',
-      index: index + 1,
-      ...issue,
-    }));
-    const securityDocs = analysis.security.map((issue, index) => ({
-      roastRunId: roastRun._id,
-      userId,
-      repositoryId: roastRun.repositoryId,
-      type: 'security',
-      index: index + 1,
-      ...issue,
-    }));
+    const issueDocs = ANALYSIS_DOMAIN_KEYS.flatMap((domainKey) =>
+      (analysis.domains[domainKey] || []).map((issue, index) => ({
+        roastRunId: roastRun._id,
+        userId,
+        repositoryId: roastRun.repositoryId,
+        type: domainKey,
+        index: index + 1,
+        ...issue,
+      })),
+    );
 
     await RoastIssue.deleteMany({ roastRunId: roastRun._id });
-    const createdIssues = await RoastIssue.insertMany([
-      ...codeSmellDocs,
-      ...securityDocs,
-    ]);
+    const createdIssues =
+      issueDocs.length > 0 ? await RoastIssue.insertMany(issueDocs) : [];
 
     roastRun.status = 'completed';
     roastRun.ai = {
@@ -638,19 +717,19 @@ export const analyzeCheckedRepository = async ({
       metrics: {
         fileCount: roastRun.check.fileCount,
         sizeLabel: roastRun.check.sizeLabel,
-        codeSmellCount: analysis.codeSmells.length,
-        securityCount: analysis.security.length,
+        totalIssues: issueDocs.length,
+        ...Object.fromEntries(
+          ANALYSIS_DOMAIN_KEYS.map((domainKey) => [
+            domainIssueCountKey(domainKey),
+            analysis.domains[domainKey]?.length || 0,
+          ]),
+        ),
       },
       completedAt: now,
     };
     await roastRun.save();
 
-    const codeSmells = createdIssues.filter(
-      (issue) => issue.type === 'code_smell',
-    );
-    const security = createdIssues.filter((issue) => issue.type === 'security');
-
-    return buildReportResponse({ roastRun, codeSmells, security });
+    return buildReportResponse({ roastRun, issues: createdIssues });
   } catch (error) {
     roastRun.status = 'failed';
     roastRun.error = {
@@ -721,11 +800,7 @@ export const getRoastReportDetail = async ({ roastId, userId }) => {
     index: 1,
   });
 
-  return buildReportResponse({
-    roastRun,
-    codeSmells: issues.filter((issue) => issue.type === 'code_smell'),
-    security: issues.filter((issue) => issue.type === 'security'),
-  });
+  return buildReportResponse({ roastRun, issues });
 };
 
 export const deleteRoastReport = async ({ roastId, userId }) => {
@@ -746,6 +821,7 @@ export const deleteRoastReport = async ({ roastId, userId }) => {
     roastId: roastRun.id,
     repositoryFullName: roastRun.repoSnapshot.fullName,
     repositoryUrl: roastRun.repoSnapshot.htmlUrl,
+    defaultBranch: roastRun.repoSnapshot.defaultBranch,
     roastDate: roastRun.result.roastDate.toISOString(),
     roastDateDisplay: roastRun.result.roastDateDisplay,
   };
@@ -781,6 +857,10 @@ export const generateIssuePrompt = async ({
     issue.suggestion = defaultSuggestionForIssue(issue);
   }
 
+  if (!issue.priority) {
+    issue.priority = normalizePriority(issue.priority, issue.severity);
+  }
+
   const normalizedInstruction = normalizePromptInstruction(
     regenerateInstruction,
   );
@@ -808,5 +888,5 @@ export const generateIssuePrompt = async ({
   issue.fixPromptGeneratedAt = new Date();
   await issue.save();
 
-  return issueToResponse(issue, issue.index - 1);
+  return issueToResponse(issue, issue.index - 1, roastRun);
 };

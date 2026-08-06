@@ -52,12 +52,18 @@ const router = express.Router();
  *                     grade: C+
  *                     repositoryFullName: sindresorhus/is
  *                     repositoryUrl: https://github.com/sindresorhus/is
+ *                     defaultBranch: main
  *                     roastDate: 2026-05-14T08:49:17.234Z
  *                     roastDateDisplay: 14/5/2026
  *                     sizeLabel: medium
  *                     sizeDisplay: Medium
- *                     totalCodeSmell: 7
+ *                     totalIssues: 10
+ *                     totalMaintainability: 4
+ *                     totalArchitecture: 1
  *                     totalSecurity: 1
+ *                     totalRobustness: 2
+ *                     totalOperational: 1
+ *                     totalInteraction: 1
  *                     analysisType: system_gemini
  *                 pagination:
  *                   page: 1
@@ -123,46 +129,86 @@ router.get('/history', authMiddleware, listRoastHistory);
  *                     name: react
  *                     fullName: facebook/react
  *                     htmlUrl: https://github.com/facebook/react
+ *                     defaultBranch: main
  *                   grade: A
  *                   score: 92
  *                   repoInfo:
  *                     fileCount: 1934
  *                     sizeLabel: large
  *                     sizeDisplay: Large
- *                     totalCodeSmell: 12
+ *                     totalIssues: 16
+ *                     totalMaintainability: 6
+ *                     totalArchitecture: 2
  *                     totalSecurity: 3
- *                     totalHigh: 4
- *                     totalMedium: 8
- *                     totalLow: 3
+ *                     totalRobustness: 2
+ *                     totalOperational: 1
+ *                     totalInteraction: 2
+ *                     totalP0: 1
+ *                     totalP1: 3
+ *                     totalP2: 8
+ *                     totalP3: 3
  *                     analysisType: system_gemini
  *                     analysisTypeDisplay: Gemini default system analysis
  *                   issues:
- *                     codeSmells:
- *                       all: 12
- *                       totalHigh: 2
- *                       totalMedium: 7
- *                       totalLow: 3
+ *                     maintainability:
+ *                       all: 6
+ *                       totalP0: 0
+ *                       totalP1: 1
+ *                       totalP2: 4
+ *                       totalP3: 1
  *                       items:
  *                         - index: 1
  *                           id: 66cfd1c6b1a5f4f1b3f7e222
- *                           type: code_smell
+ *                           type: maintainability
  *                           fileName: App.js
  *                           filePath: src/App.js
- *                           title: Example smell
+ *                           fileUrl: https://github.com/facebook/react/blob/main/src/App.js#L10
+ *                           title: Example maintainability issue
  *                           description: Example description
  *                           suggestion: Split the large function into smaller focused functions and add a regression test for the affected behavior.
  *                           startLine: 10
  *                           endLine: 14
- *                           severity: medium
- *                           severityDisplay: Medium
+ *                           priority: P2
+ *                           priorityDisplay: "P2 – Should address during continued development"
+ *                           priorityDescription: "Should be included in the near-term development backlog."
+ *                           priorityColor: "yellow"
  *                           fixPrompt: null
  *                           fixPromptVersion: 0
  *                           fixPromptGeneratedAt: null
+ *                     architecture:
+ *                       all: 2
+ *                       totalP0: 0
+ *                       totalP1: 1
+ *                       totalP2: 1
+ *                       totalP3: 0
+ *                       items: []
  *                     security:
  *                       all: 3
- *                       totalHigh: 2
- *                       totalMedium: 1
- *                       totalLow: 0
+ *                       totalP0: 1
+ *                       totalP1: 1
+ *                       totalP2: 1
+ *                       totalP3: 0
+ *                       items: []
+ *                     robustness:
+ *                       all: 2
+ *                       totalP0: 0
+ *                       totalP1: 0
+ *                       totalP2: 2
+ *                       totalP3: 0
+ *                       items: []
+ *                     operational:
+ *                       all: 1
+ *                       totalP0: 0
+ *                       totalP1: 1
+ *                       totalP2: 0
+ *                       totalP3: 0
+ *                       items: []
+ *                     interaction:
+ *                       all: 2
+ *                       totalP0: 0
+ *                       totalP1: 0
+ *                       totalP2: 1
+ *                       totalP3: 1
  *                       items: []
  *       400:
  *         description: Invalid payload or missing OpenAI key for large repositories
@@ -201,7 +247,7 @@ router.post('/:roastId/analyze', authMiddleware, analyzeRepo);
  *     tags:
  *       - Roasts
  *     summary: Generate or regenerate a fix prompt for one issue
- *     description: Generates a prompt the user can paste into a coding assistant to fix one code smell or security issue. First generation may use an empty body. Regeneration requires regenerateInstruction; system Gemini analyzes that instruction and creates a meaningfully different prompt from the previous version.
+ *     description: Generates a prompt the user can paste into a coding assistant to fix one domain issue. First generation may use an empty body. Regeneration requires regenerateInstruction; system Gemini analyzes that instruction and creates a meaningfully different prompt from the previous version.
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -256,18 +302,21 @@ router.post('/:roastId/analyze', authMiddleware, analyzeRepo);
  *               data:
  *                 issue:
  *                   id: 66cfd1c6b1a5f4f1b3f7e222
- *                   type: code_smell
+ *                   type: maintainability
  *                   index: 1
  *                   fileName: App.js
  *                   filePath: src/App.js
- *                   title: Example smell
+ *                   fileUrl: https://github.com/facebook/react/blob/main/src/App.js#L10
+ *                   title: Example maintainability issue
  *                   description: Example description
  *                   suggestion: Split the component logic into smaller functions and keep rendering separate from data preparation.
  *                   startLine: 10
  *                   endLine: 14
- *                   severity: medium
- *                   severityDisplay: Medium
- *                   fixPrompt: "You are a senior software engineer. Help me fix this code smell issue..."
+ *                   priority: P2
+ *                   priorityDisplay: "P2 – Should address during continued development"
+ *                   priorityDescription: "Should be included in the near-term development backlog."
+ *                   priorityColor: "yellow"
+ *                   fixPrompt: "You are a senior software engineer. Help me fix this maintainability issue..."
  *                   fixPromptVersion: 1
  *                   fixPromptInstruction: Make it more detailed, include unit tests, and ask for a diff.
  *                   fixPromptInstructionAnalysis: System Gemini interpreted the request as making the regenerated prompt more detailed, requiring unit tests, and asking for a clear diff.
@@ -320,6 +369,7 @@ router.post(
  *                   roastId: 6a058c5c22f813fa54d72f64
  *                   repositoryFullName: TagKrj/UTTQ_Web
  *                   repositoryUrl: https://github.com/TagKrj/UTTQ_Web
+ *                   defaultBranch: main
  *                   roastDate: 2026-05-14T08:49:17.234Z
  *                   roastDateDisplay: 14/5/2026
  *       401:

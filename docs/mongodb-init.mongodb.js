@@ -165,7 +165,13 @@ await ensureCollection('roast_runs', {
               properties: {
                 fileCount: { bsonType: 'int' },
                 sizeLabel: { enum: ['small', 'medium', 'large'] },
-                codeSmellCount: { bsonType: 'int' },
+                totalIssues: { bsonType: 'int' },
+                totalMaintainability: { bsonType: 'int' },
+                totalArchitecture: { bsonType: 'int' },
+                totalSecurity: { bsonType: 'int' },
+                totalRobustness: { bsonType: 'int' },
+                totalOperational: { bsonType: 'int' },
+                totalInteraction: { bsonType: 'int' },
                 securityCount: { bsonType: 'int' },
               },
             },
@@ -204,14 +210,24 @@ await ensureCollection('roast_issues', {
         'suggestion',
         'startLine',
         'endLine',
-        'severity',
+        'priority',
         'createdAt',
       ],
       properties: {
         roastRunId: { bsonType: 'objectId' },
         userId: { bsonType: 'objectId' },
         repositoryId: { bsonType: 'objectId' },
-        type: { enum: ['code_smell', 'security'] },
+        type: {
+          enum: [
+            'code_smell',
+            'maintainability',
+            'architecture',
+            'security',
+            'robustness',
+            'operational',
+            'interaction',
+          ],
+        },
         index: { bsonType: 'int' },
         filePath: { bsonType: 'string' },
         title: { bsonType: 'string' },
@@ -219,6 +235,7 @@ await ensureCollection('roast_issues', {
         suggestion: { bsonType: 'string' },
         startLine: { bsonType: 'int', minimum: 1 },
         endLine: { bsonType: 'int', minimum: 1 },
+        priority: { enum: ['p0', 'p1', 'p2', 'p3'] },
         severity: { enum: ['low', 'medium', 'high'] },
         ruleId: { bsonType: ['string', 'null'] },
         confidence: {
@@ -260,7 +277,16 @@ await ensureCollection('analysis_file_caches', {
         repositoryFullName: { bsonType: 'string' },
         filePath: { bsonType: 'string' },
         fileSha: { bsonType: 'string' },
-        analysisType: { enum: ['code_smell', 'security'] },
+        analysisType: {
+          enum: [
+            'maintainability',
+            'architecture',
+            'security',
+            'robustness',
+            'operational',
+            'interaction',
+          ],
+        },
         provider: { enum: ['system_gemini', 'user_openai'] },
         model: { bsonType: 'string' },
         rulesHash: { bsonType: 'string' },
@@ -370,7 +396,7 @@ await database.roast_runs.createIndex({ repositoryId: 1, createdAt: -1 });
 await database.roast_runs.createIndex({ status: 1, updatedAt: -1 });
 
 await database.roast_issues.createIndex({ roastRunId: 1, type: 1, index: 1 });
-await database.roast_issues.createIndex({ roastRunId: 1, severity: 1 });
+await database.roast_issues.createIndex({ roastRunId: 1, priority: 1 });
 await database.roast_issues.createIndex({ userId: 1, createdAt: -1 });
 
 await database.analysis_file_caches.createIndex(
@@ -390,7 +416,11 @@ await database.analysis_file_caches.createIndex({
   detectedAt: -1,
 });
 
-await database.analysis_usages.createIndex({ userId: 1, dayKey: 1, usedAt: -1 });
+await database.analysis_usages.createIndex({
+  userId: 1,
+  dayKey: 1,
+  usedAt: -1,
+});
 await database.analysis_usages.createIndex({ dayKey: 1, usedAt: -1 });
 await database.analysis_usages.createIndex({ roastRunId: 1 });
 

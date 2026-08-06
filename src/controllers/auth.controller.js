@@ -2,17 +2,29 @@ import {
   authenticateWithGithubCode,
   buildGithubAuthUrl,
   formatCurrentUser,
-  resolveGithubCallbackUrl,
+  isLocalhostUrl,
+  resolveGithubOAuthConfig,
 } from '../services/githubAuth.service.js';
 import { signAccessToken } from '../services/token.service.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
-const getFrontendAuthCallbackUrl = () =>
-  process.env.FRONTEND_AUTH_CALLBACK_URL ||
-  `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/github/callback`;
+const getFrontendAuthCallbackUrl = (requestOrigin) => {
+  if (isLocalhostUrl(requestOrigin)) {
+    return (
+      process.env.FRONTEND_LOCAL_AUTH_CALLBACK_URL ||
+      process.env.FRONTEND_AUTH_CALLBACK_URL ||
+      `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/github/callback`
+    );
+  }
 
-const buildFrontendRedirectUrl = ({ accessToken, user }) => {
-  const redirectUrl = new URL(getFrontendAuthCallbackUrl());
+  return (
+    process.env.FRONTEND_AUTH_CALLBACK_URL ||
+    `${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/github/callback`
+  );
+};
+
+const buildFrontendRedirectUrl = ({ accessToken, requestOrigin, user }) => {
+  const redirectUrl = new URL(getFrontendAuthCallbackUrl(requestOrigin));
   redirectUrl.searchParams.set('accessToken', accessToken);
   redirectUrl.searchParams.set('user', JSON.stringify(user));
   return redirectUrl.toString();
@@ -25,9 +37,10 @@ const getRequestOrigin = (req) => {
 };
 
 export const getGithubAuthUrl = asyncHandler(async (req, res) => {
-  const callbackUrl = resolveGithubCallbackUrl(getRequestOrigin(req));
+  const requestOrigin = getRequestOrigin(req);
+  const oauthConfig = resolveGithubOAuthConfig(requestOrigin);
   const authUrl = buildGithubAuthUrl({
-    callbackUrl,
+    oauthConfig,
     state: req.query.state,
   });
 
@@ -46,10 +59,12 @@ export const getGithubAuthUrl = asyncHandler(async (req, res) => {
 });
 
 export const handleGithubCallback = asyncHandler(async (req, res) => {
-  const callbackUrl = resolveGithubCallbackUrl(getRequestOrigin(req));
+  const requestOrigin = getRequestOrigin(req);
+  const oauthConfig = resolveGithubOAuthConfig(requestOrigin);
   const user = await authenticateWithGithubCode({
-    callbackUrl,
+    callbackUrl: oauthConfig.callbackUrl,
     code: req.query.code,
+    oauthConfig,
   });
   const accessToken = signAccessToken(user);
 
@@ -57,6 +72,7 @@ export const handleGithubCallback = asyncHandler(async (req, res) => {
     return res.redirect(
       buildFrontendRedirectUrl({
         accessToken,
+        requestOrigin,
         user,
       }),
     );

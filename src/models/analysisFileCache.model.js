@@ -20,7 +20,14 @@ const analysisFileCacheSchema = new mongoose.Schema(
     },
     analysisType: {
       type: String,
-      enum: ['code_smell', 'security'],
+      enum: [
+        'maintainability',
+        'architecture',
+        'security',
+        'robustness',
+        'operational',
+        'interaction',
+      ],
       required: true,
     },
     provider: {

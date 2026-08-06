@@ -149,7 +149,7 @@ description
 evidence
 startLine
 endLine
-severity
+priority
 heuristic metrics
 
 Output MUST follow this RAW detection JSON structure:
@@ -165,7 +165,7 @@ Output MUST follow this RAW detection JSON structure:
 "evidence": "const user = await User.findById(req.body.userId)",
 "startLine": 12,
 "endLine": 18,
-"severity": "high",
+"priority": "P0",
 "metrics": {
 "tainted_input_flow": "clear",
 "auth_boundary": "none",
@@ -175,6 +175,12 @@ Output MUST follow this RAW detection JSON structure:
 }
 }
 ]
+
+Priority definitions:
+- P0: Production blocker. Must be fixed before deployment.
+- P1: Must address before scaling. May not block the MVP, but must be addressed before significant growth.
+- P2: Should address during continued development. Should be included in the near-term development backlog.
+- P3: Acceptable MVP debt. Acceptable temporarily; monitor and revisit later.
 
 If no security issues are found:
 

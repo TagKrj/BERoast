@@ -108,8 +108,8 @@ title
 description
 startLine
 endLine
-severity
-severityDisplay
+priority
+priorityDisplay
 
 Output MUST follow this FINAL JSON structure:
 
@@ -122,10 +122,16 @@ Output MUST follow this FINAL JSON structure:
     "description": "The function contains excessive logic, multiple responsibilities, and deep conditional nesting, reducing readability and maintainability.",
     "startLine": 12,
     "endLine": 86,
-    "severity": "medium",
-    "severityDisplay": "Medium"
+    "priority": "P2",
+    "priorityDisplay": "P2 – Should address during continued development"
   }
 ]
+
+Priority definitions:
+- P0: Production blocker. Must be fixed before deployment.
+- P1: Must address before scaling. May not block the MVP, but must be addressed before significant growth.
+- P2: Should address during continued development. Should be included in the near-term development backlog.
+- P3: Acceptable MVP debt. Acceptable temporarily; monitor and revisit later.
 
 ---
 

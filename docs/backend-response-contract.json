@@ -92,40 +92,50 @@
           "owner": "TagKrj",
           "name": "UTTQ_Web",
           "fullName": "TagKrj/UTTQ_Web",
-          "htmlUrl": "https://github.com/TagKrj/UTTQ_Web"
+          "htmlUrl": "https://github.com/TagKrj/UTTQ_Web",
+          "defaultBranch": "main"
         },
         "grade": "B+",
         "score": 84,
         "repoInfo": {
           "fileCount": 1220,
           "sizeLabel": "small",
-          "totalCodeSmell": 2,
+          "totalIssues": 4,
+          "totalMaintainability": 2,
+          "totalArchitecture": 0,
           "totalSecurity": 2,
-          "totalHigh": 1,
-          "totalMedium": 2,
-          "totalLow": 1,
+          "totalRobustness": 0,
+          "totalOperational": 0,
+          "totalInteraction": 0,
+          "totalP0": 0,
+          "totalP1": 1,
+          "totalP2": 2,
+          "totalP3": 1,
           "analysisType": "system_gemini"
         },
         "issues": {
-          "codeSmells": {
+          "maintainability": {
             "all": 2,
-            "totalHigh": 0,
-            "totalMedium": 1,
-            "totalLow": 1,
+            "totalP1": 0,
+            "totalP2": 1,
+            "totalP3": 1,
             "items": [
               {
                 "id": "665f0f818c5d5b9b4f3a4444",
-                "type": "code_smell",
+                "type": "maintainability",
                 "index": 1,
                 "fileName": "src/services/repoAnalyzer.service.js",
                 "filePath": "src/services/repoAnalyzer.service.js",
+                "fileUrl": "https://github.com/TagKrj/UTTQ_Web/blob/main/src/services/repoAnalyzer.service.js#L42",
                 "title": "Large function with mixed responsibilities",
                 "description": "The function fetches repository data, parses files, builds prompts, and formats the response in one place.",
                 "suggestion": "Split the repository fetch, parsing, prompt building, and response formatting into focused service functions. Keep the controller-facing method as an orchestration layer and add tests around the extracted behavior.",
                 "startLine": 42,
                 "endLine": 118,
-                "severity": "medium",
-                "severityDisplay": "Medium",
+                "priority": "P2",
+                "priorityDisplay": "P2 – Should address during continued development",
+                "priorityDescription": "Should be included in the near-term development backlog.",
+                "priorityColor": "yellow",
                 "fixPrompt": null,
                 "fixPromptVersion": 0,
                 "fixPromptInstruction": null,
@@ -134,17 +144,20 @@
               },
               {
                 "id": "665f0f818c5d5b9b4f3a5555",
-                "type": "code_smell",
+                "type": "maintainability",
                 "index": 2,
                 "fileName": "src/controllers/roast.controller.js",
                 "filePath": "src/controllers/roast.controller.js",
+                "fileUrl": "https://github.com/TagKrj/UTTQ_Web/blob/main/src/controllers/roast.controller.js#L19",
                 "title": "Controller contains business logic",
                 "description": "The controller directly prepares analysis rules instead of delegating that work to the service layer.",
                 "suggestion": "Move rule preparation into the analysis service so the controller only validates input, calls the service, and returns the HTTP response.",
                 "startLine": 19,
                 "endLine": 57,
-                "severity": "low",
-                "severityDisplay": "Low",
+                "priority": "P3",
+                "priorityDisplay": "P3 – Acceptable MVP debt",
+                "priorityDescription": "Acceptable temporarily; monitor and revisit later.",
+                "priorityColor": "gray",
                 "fixPrompt": null,
                 "fixPromptVersion": 0,
                 "fixPromptInstruction": null,
@@ -153,11 +166,19 @@
               }
             ]
           },
+          "architecture": {
+            "all": 0,
+            "totalP0": 0,
+            "totalP1": 0,
+            "totalP2": 0,
+            "totalP3": 0,
+            "items": []
+          },
           "security": {
             "all": 2,
-            "totalHigh": 1,
-            "totalMedium": 1,
-            "totalLow": 0,
+            "totalP1": 1,
+            "totalP2": 1,
+            "totalP3": 0,
             "items": [
               {
                 "id": "665f0f818c5d5b9b4f3a6666",
@@ -165,13 +186,16 @@
                 "index": 1,
                 "fileName": "src/routes/roast.routes.js",
                 "filePath": "src/routes/roast.routes.js",
+                "fileUrl": "https://github.com/TagKrj/UTTQ_Web/blob/main/src/routes/roast.routes.js#L8",
                 "title": "Missing rate limit for analysis endpoint",
                 "description": "The analysis endpoint can trigger expensive AI calls and should have a stricter per-user rate limit.",
                 "suggestion": "Apply a stricter authenticated rate limit to the analysis endpoint and return a clear 429 response when the user exceeds the allowed request volume.",
                 "startLine": 8,
                 "endLine": 15,
-                "severity": "high",
-                "severityDisplay": "High",
+                "priority": "P0",
+                "priorityDisplay": "P0 – Production blocker",
+                "priorityDescription": "Must be fixed before deployment.",
+                "priorityColor": "red",
                 "fixPrompt": null,
                 "fixPromptVersion": 0,
                 "fixPromptInstruction": null,
@@ -184,13 +208,16 @@
                 "index": 2,
                 "fileName": "src/services/github.service.js",
                 "filePath": "src/services/github.service.js",
+                "fileUrl": "https://github.com/TagKrj/UTTQ_Web/blob/main/src/services/github.service.js#L31",
                 "title": "Repository URL is not normalized before use",
                 "description": "The service should validate and normalize GitHub URLs before fetching remote content.",
                 "suggestion": "Normalize and validate GitHub URLs before making remote requests. Reject unsupported hosts, malformed paths, and private or non-public repository targets.",
                 "startLine": 31,
                 "endLine": 45,
-                "severity": "medium",
-                "severityDisplay": "Medium",
+                "priority": "P2",
+                "priorityDisplay": "P2 – Should address during continued development",
+                "priorityDescription": "Should be included in the near-term development backlog.",
+                "priorityColor": "yellow",
                 "fixPrompt": null,
                 "fixPromptVersion": 0,
                 "fixPromptInstruction": null,
@@ -198,6 +225,30 @@
                 "fixPromptGeneratedAt": null
               }
             ]
+          },
+          "robustness": {
+            "all": 0,
+            "totalP0": 0,
+            "totalP1": 0,
+            "totalP2": 0,
+            "totalP3": 0,
+            "items": []
+          },
+          "operational": {
+            "all": 0,
+            "totalP0": 0,
+            "totalP1": 0,
+            "totalP2": 0,
+            "totalP3": 0,
+            "items": []
+          },
+          "interaction": {
+            "all": 0,
+            "totalP0": 0,
+            "totalP1": 0,
+            "totalP2": 0,
+            "totalP3": 0,
+            "items": []
           }
         }
       }
@@ -224,22 +275,34 @@
           "grade": "A",
           "repositoryFullName": "TagKrj/UTTQ_Web",
           "repositoryUrl": "https://github.com/TagKrj/UTTQ_Web",
+          "defaultBranch": "main",
           "roastDate": "2026-04-23T00:00:00.000Z",
           "roastDateDisplay": "23/4/2026",
           "sizeLabel": "small",
-          "totalCodeSmell": 1,
-          "totalSecurity": 0
+          "totalSecurity": 0,
+          "totalIssues": 1,
+          "totalMaintainability": 1,
+          "totalArchitecture": 0,
+          "totalRobustness": 0,
+          "totalOperational": 0,
+          "totalInteraction": 0
         },
         {
           "roastId": "665f0f818c5d5b9b4f3a3333",
           "grade": "B",
           "repositoryFullName": "TagKrj/UTTQ_Web",
           "repositoryUrl": "https://github.com/TagKrj/UTTQ_Web",
+          "defaultBranch": "main",
           "roastDate": "2026-04-20T00:00:00.000Z",
           "roastDateDisplay": "20/4/2026",
           "sizeLabel": "large",
-          "totalCodeSmell": 8,
-          "totalSecurity": 3
+          "totalSecurity": 3,
+          "totalIssues": 11,
+          "totalMaintainability": 8,
+          "totalArchitecture": 0,
+          "totalRobustness": 0,
+          "totalOperational": 0,
+          "totalInteraction": 0
         }
       ],
       "pagination": {
@@ -259,32 +322,73 @@
         "roastDateDisplay": "24/3/2025",
         "repository": {
           "fullName": "TagKrj/UTTQ_Web",
-          "htmlUrl": "https://github.com/TagKrj/UTTQ_Web"
+          "htmlUrl": "https://github.com/TagKrj/UTTQ_Web",
+          "defaultBranch": "main"
         },
         "grade": "B+",
         "repoInfo": {
           "fileCount": 1220,
           "sizeLabel": "small",
-          "totalCodeSmell": 0,
-          "totalSecurity": 0,
-          "totalHigh": 0,
-          "totalMedium": 0,
-          "totalLow": 0,
+          "totalIssues": 4,
+          "totalMaintainability": 2,
+          "totalArchitecture": 0,
+          "totalSecurity": 2,
+          "totalRobustness": 0,
+          "totalOperational": 0,
+          "totalInteraction": 0,
+          "totalP0": 0,
+          "totalP1": 1,
+          "totalP2": 2,
+          "totalP3": 1,
           "analysisType": "system_gemini"
         },
         "issues": {
-          "codeSmells": {
+          "maintainability": {
             "all": 0,
-            "totalHigh": 0,
-            "totalMedium": 0,
-            "totalLow": 0,
+            "totalP0": 0,
+            "totalP1": 0,
+            "totalP2": 0,
+            "totalP3": 0,
+            "items": []
+          },
+          "architecture": {
+            "all": 0,
+            "totalP0": 0,
+            "totalP1": 0,
+            "totalP2": 0,
+            "totalP3": 0,
             "items": []
           },
           "security": {
             "all": 0,
-            "totalHigh": 0,
-            "totalMedium": 0,
-            "totalLow": 0,
+            "totalP0": 0,
+            "totalP1": 0,
+            "totalP2": 0,
+            "totalP3": 0,
+            "items": []
+          },
+          "robustness": {
+            "all": 0,
+            "totalP0": 0,
+            "totalP1": 0,
+            "totalP2": 0,
+            "totalP3": 0,
+            "items": []
+          },
+          "operational": {
+            "all": 0,
+            "totalP0": 0,
+            "totalP1": 0,
+            "totalP2": 0,
+            "totalP3": 0,
+            "items": []
+          },
+          "interaction": {
+            "all": 0,
+            "totalP0": 0,
+            "totalP1": 0,
+            "totalP2": 0,
+            "totalP3": 0,
             "items": []
           }
         }
@@ -297,18 +401,21 @@
     "data": {
       "issue": {
         "id": "665f0f818c5d5b9b4f3a4444",
-        "type": "code_smell",
+        "type": "maintainability",
         "index": 1,
         "fileName": "repoAnalyzer.service.js",
         "filePath": "src/services/repoAnalyzer.service.js",
+        "fileUrl": "https://github.com/TagKrj/UTTQ_Web/blob/main/src/services/repoAnalyzer.service.js#L42",
         "title": "Large function with mixed responsibilities",
         "description": "The function fetches repository data, parses files, builds prompts, and formats the response in one place.",
         "suggestion": "Split the repository fetch, parsing, prompt building, and response formatting into focused service functions. Keep the controller-facing method as an orchestration layer and add tests around the extracted behavior.",
         "startLine": 42,
         "endLine": 118,
-        "severity": "medium",
-        "severityDisplay": "Medium",
-        "fixPrompt": "You are a senior software engineer. Help me fix this code smell issue in my repository...",
+        "priority": "P2",
+        "priorityDisplay": "P2 – Should address during continued development",
+        "priorityDescription": "Should be included in the near-term development backlog.",
+        "priorityColor": "yellow",
+        "fixPrompt": "You are a senior software engineer. Help me fix this maintainability issue in my repository...",
         "fixPromptVersion": 1,
         "fixPromptInstruction": "Make it more detailed, include unit tests, and ask for a diff.",
         "fixPromptInstructionAnalysis": "System Gemini interpreted the request as: make the regenerated prompt more detailed, require unit tests, and ask the coding assistant to return a clear diff.",

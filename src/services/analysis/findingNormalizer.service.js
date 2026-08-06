@@ -1,6 +1,65 @@
-const normalizeSeverity = (value) => {
-  const severity = String(value || 'low').toLowerCase();
-  return ['low', 'medium', 'high'].includes(severity) ? severity : 'low';
+const legacySeverityToPriority = {
+  high: 'p1',
+  medium: 'p2',
+  low: 'p3',
+};
+
+export const normalizePriority = (value, legacySeverity) => {
+  const priority = String(value || '')
+    .toLowerCase()
+    .replace(/^priority\s*/i, '')
+    .trim();
+
+  if (['p0', 'p1', 'p2', 'p3'].includes(priority)) {
+    return priority;
+  }
+
+  const severity = String(legacySeverity || value || '')
+    .toLowerCase()
+    .trim();
+  return legacySeverityToPriority[severity] || 'p3';
+};
+
+export const priorityDisplay = (priority) =>
+  normalizePriority(priority).toUpperCase();
+
+export const priorityDefinition = (priority) => {
+  switch (normalizePriority(priority)) {
+    case 'p0':
+      return 'Production blocker';
+    case 'p1':
+      return 'Must address before scaling';
+    case 'p2':
+      return 'Should address during continued development';
+    default:
+      return 'Acceptable MVP debt';
+  }
+};
+
+export const priorityGuidance = (priority) => {
+  switch (normalizePriority(priority)) {
+    case 'p0':
+      return 'Must be fixed before deployment.';
+    case 'p1':
+      return 'May not block the MVP, but must be addressed before significant growth.';
+    case 'p2':
+      return 'Should be included in the near-term development backlog.';
+    default:
+      return 'Acceptable temporarily; monitor and revisit later.';
+  }
+};
+
+export const priorityColor = (priority) => {
+  switch (normalizePriority(priority)) {
+    case 'p0':
+      return 'red';
+    case 'p1':
+      return 'orange';
+    case 'p2':
+      return 'yellow';
+    default:
+      return 'gray';
+  }
 };
 
 const normalizeLine = (value) => {
@@ -95,7 +154,7 @@ export const normalizeFinalFindings = (items = [], { type } = {}) =>
   items.slice(0, 80).map((item, index) => {
     const startLine = normalizeLine(item.startLine);
     const endLine = Math.max(startLine, normalizeLine(item.endLine));
-    const severity = normalizeSeverity(item.severity);
+    const priority = normalizePriority(item.priority, item.severity);
 
     return {
       filePath: String(item.filePath || 'unknown'),
@@ -104,7 +163,7 @@ export const normalizeFinalFindings = (items = [], { type } = {}) =>
       suggestion: normalizeSuggestion(item, type),
       startLine,
       endLine,
-      severity,
+      priority,
       ruleId: item.ruleId ? String(item.ruleId) : null,
       confidence:
         typeof item.confidence === 'number'

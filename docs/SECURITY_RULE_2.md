@@ -105,8 +105,8 @@ title
 description
 startLine
 endLine
-severity
-severityDisplay
+priority
+priorityDisplay
 
 Output MUST follow this FINAL JSON structure:
 
@@ -119,10 +119,16 @@ Output MUST follow this FINAL JSON structure:
 "description": "The service accepts a user-provided URL and performs a server-side request without host allowlisting or private-network blocking.",
 "startLine": 22,
 "endLine": 38,
-"severity": "high",
-"severityDisplay": "High"
+"priority": "P0",
+"priorityDisplay": "P0 – Production blocker"
 }
 ]
+
+Priority definitions:
+- P0: Production blocker. Must be fixed before deployment.
+- P1: Must address before scaling. May not block the MVP, but must be addressed before significant growth.
+- P2: Should address during continued development. Should be included in the near-term development backlog.
+- P3: Acceptable MVP debt. Acceptable temporarily; monitor and revisit later.
 
 If no valid security issues remain:
 
