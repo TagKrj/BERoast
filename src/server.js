@@ -1,10 +1,10 @@
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
-import app from './app.js';
 import connectDB from './config/db.js';
 
 dotenv.config();
 
+const { default: app } = await import('./app.js');
 const { default: swaggerSpec } = await import('./config/swagger.js');
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

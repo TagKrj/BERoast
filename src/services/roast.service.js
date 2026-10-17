@@ -29,6 +29,8 @@ const DAILY_ANALYSIS_LIMIT = Number.parseInt(
   process.env.DAILY_ANALYSIS_LIMIT || '10',
   10,
 );
+const ALLOW_SYSTEM_AI_FOR_LARGE =
+  process.env.ALLOW_SYSTEM_AI_FOR_LARGE === 'true';
 const VIETNAM_TIME_OFFSET_MS = 7 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -660,7 +662,11 @@ export const analyzeCheckedRepository = async ({
   const wantsPersonalOpenAi = Boolean(openAiApiKey);
   const provider = wantsPersonalOpenAi ? 'user_openai' : 'system_gemini';
 
-  if (roastRun.check.gptKeyRequired && !wantsPersonalOpenAi) {
+  if (
+    roastRun.check.gptKeyRequired &&
+    !wantsPersonalOpenAi &&
+    !ALLOW_SYSTEM_AI_FOR_LARGE
+  ) {
     throw new AppError(
       'Personal OpenAI API key is required for large repositories.',
       400,

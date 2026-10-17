@@ -12,6 +12,10 @@ import asyncHandler from '../utils/asyncHandler.js';
 
 const analyzeRepositorySchema = z.object({
   openAiApiKey: z.preprocess((value) => {
+    if (value == null) {
+      return undefined;
+    }
+
     if (typeof value !== 'string') {
       return value;
     }
