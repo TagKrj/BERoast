@@ -72,6 +72,8 @@ const roastRunSchema = new mongoose.Schema(
       },
       model: String,
       usedPersonalApiKey: Boolean,
+      degraded: Boolean,
+      domains: mongoose.Schema.Types.Mixed,
     },
     result: {
       roastDate: Date,

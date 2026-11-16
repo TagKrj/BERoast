@@ -149,6 +149,19 @@ router.get('/history', authMiddleware, listRoastHistory);
  *                     totalP3: 3
  *                     analysisType: system_gemini
  *                     analysisTypeDisplay: Gemini default system analysis
+ *                   provenance:
+ *                     provider: system_gemini
+ *                     model: gemini-3.8-flash
+ *                     degraded: false
+ *                     domains:
+ *                       security:
+ *                         detectionBatches: 4
+ *                         fallbackBatches: 0
+ *                         validationFallback: false
+ *                         domainFallback: false
+ *                         fallbackReason: null
+ *                         model: gemini-3.8-flash
+ *                         degraded: false
  *                   issues:
  *                     maintainability:
  *                       all: 6

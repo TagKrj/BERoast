@@ -116,9 +116,33 @@ const runAnalysisStep = async ({
       model: fallbackModel,
       findings: fallback(codeSample),
       fallbackReason: error.code || 'AI_PROVIDER_FAILED',
+      provenance: { domainFallback: true },
     };
   }
 };
+
+// Per-domain record of which analyser actually produced the findings.
+export const summarizeProvenance = (analyses) =>
+  Object.fromEntries(
+    analysisDomainValues().map((domain) => {
+      const analysis = analyses[domain.key] || {};
+      const item = {
+        detectionBatches: 0,
+        fallbackBatches: 0,
+        validationFallback: false,
+        domainFallback: false,
+        ...analysis.provenance,
+        fallbackReason: analysis.fallbackReason || null,
+      };
+      item.model = item.domainFallback ? null : analysis.model || null;
+      item.degraded =
+        item.domainFallback ||
+        item.validationFallback ||
+        item.fallbackBatches > 0;
+
+      return [domain.key, item];
+    }),
+  );
 
 export const analyzeRepositoryCode = async ({
   codeSample,
@@ -171,14 +195,19 @@ export const analyzeRepositoryCode = async ({
   );
   const score = calculateScore(domains);
   const grade = gradeFromScore(score);
+  const domainProvenance = summarizeProvenance(analyses);
+  const degraded = Object.values(domainProvenance).some(
+    (item) => item.degraded,
+  );
   const model =
-    analysisDomainValues()
-      .map((domain) => analyses[domain.key]?.model)
-      .find(Boolean) || process.env.GEMINI_ANALYSIS_MODEL;
+    Object.values(domainProvenance).find((item) => item.model)?.model ||
+    (degraded ? fallbackModel : process.env.GEMINI_ANALYSIS_MODEL);
 
   return {
     provider,
     model,
+    degraded,
+    domainProvenance,
     grade,
     score,
     domains,

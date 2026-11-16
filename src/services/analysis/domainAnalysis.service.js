@@ -278,6 +278,7 @@ const detectBatch = async ({
 
     return {
       cacheable: false,
+      fallback: true,
       detections: fallbackDomainIssues({
         domainKey: domain.key,
         snippets: files,
@@ -318,6 +319,7 @@ const validateFindings = async ({
     }
 
     return {
+      fallback: true,
       findings: normalizeFinalFindings(rawDetections, {
         type: domain.key,
       }),
@@ -340,6 +342,7 @@ export const analyzeDomain = async ({
   const snippets = selectDomainFiles(codeSample.snippets, domain);
   const rawDetections = [];
   let model = null;
+  let fallbackBatches = 0;
   const repositoryFullName = codeSample.repositoryFullName || 'unknown';
   const rulesHash = rulesContentHash(
     `${domain.key}-detection-priority-v1`,
@@ -375,7 +378,12 @@ export const analyzeDomain = async ({
     );
     const matchedDetections = [...detectionsByFile.values()].flat();
 
-    model = result.model || model;
+    // Fallback labels must not masquerade as the provider model.
+    if (result.fallback) {
+      fallbackBatches += 1;
+    } else {
+      model = result.model || model;
+    }
     rawDetections.push(...matchedDetections);
 
     if (!result.cacheable) {
@@ -392,10 +400,17 @@ export const analyzeDomain = async ({
     });
   }
 
+  const provenance = {
+    detectionBatches: batchResults.length,
+    fallbackBatches,
+    validationFallback: false,
+  };
+
   if (rawDetections.length === 0) {
     return {
       model,
       findings: [],
+      provenance,
     };
   }
 
@@ -409,7 +424,11 @@ export const analyzeDomain = async ({
   });
 
   return {
-    model: validation.model || model,
+    model: validation.fallback ? model : validation.model || model,
     findings: validation.findings,
+    provenance: {
+      ...provenance,
+      validationFallback: Boolean(validation.fallback),
+    },
   };
 };
