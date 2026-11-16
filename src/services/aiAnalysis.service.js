@@ -4,6 +4,7 @@ import { analyzeDomain } from './analysis/domainAnalysis.service.js';
 import { fallbackDomainIssues } from './analysis/localFallbackAnalysis.service.js';
 import { normalizeFinalFindings } from './analysis/findingNormalizer.service.js';
 import { createConcurrencyLimiter } from '../utils/concurrency.js';
+import { isProviderConfigError } from './analysis/llmClient.service.js';
 
 const SIZE_LIMITS = {
   small: {
@@ -94,6 +95,7 @@ const gradeFromScore = (score) => {
 
 const shouldUseLocalFallback = (provider, error) =>
   provider === 'system_gemini' &&
+  !isProviderConfigError(error) &&
   (error.statusCode >= 500 ||
     String(error.code || '').includes('GEMINI') ||
     String(error.code || '').includes('JSON_INVALID'));
