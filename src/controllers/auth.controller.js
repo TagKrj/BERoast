@@ -23,10 +23,21 @@ const getFrontendAuthCallbackUrl = (requestOrigin) => {
   );
 };
 
-const buildFrontendRedirectUrl = ({ accessToken, requestOrigin, user }) => {
+export const buildFrontendRedirectUrl = ({
+  accessToken,
+  requestOrigin,
+  state,
+  user,
+}) => {
   const redirectUrl = new URL(getFrontendAuthCallbackUrl(requestOrigin));
   redirectUrl.searchParams.set('accessToken', accessToken);
   redirectUrl.searchParams.set('user', JSON.stringify(user));
+
+  // The SPA created this nonce and must verify it (OAuth CSRF defence).
+  if (state) {
+    redirectUrl.searchParams.set('state', state);
+  }
+
   return redirectUrl.toString();
 };
 
@@ -73,6 +84,7 @@ export const handleGithubCallback = asyncHandler(async (req, res) => {
       buildFrontendRedirectUrl({
         accessToken,
         requestOrigin,
+        state: req.query.state,
         user,
       }),
     );
