@@ -554,6 +554,13 @@ const buildReportResponse = ({ roastRun, issues }) => {
           ? 'Personal OpenAI API key analysis'
           : 'Gemini default system analysis',
     },
+    // degraded is null for runs recorded before provenance was stored.
+    provenance: {
+      provider: roastRun.ai.analysisProvider,
+      model: roastRun.ai.model || null,
+      degraded: roastRun.ai.degraded ?? null,
+      domains: roastRun.ai.domains || null,
+    },
     issues: Object.fromEntries(
       ANALYSIS_DOMAIN_KEYS.map((domainKey) => [
         domainKey,
@@ -714,6 +721,8 @@ export const analyzeCheckedRepository = async ({
       analysisProvider: provider,
       model: analysis.model,
       usedPersonalApiKey: provider === 'user_openai',
+      degraded: analysis.degraded,
+      domains: analysis.domainProvenance,
     };
     roastRun.result = {
       roastDate: now,

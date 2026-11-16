@@ -113,6 +113,22 @@
           "totalP3": 1,
           "analysisType": "system_gemini"
         },
+        "provenance": {
+          "provider": "system_gemini",
+          "model": "gemini-3.8-flash",
+          "degraded": true,
+          "domains": {
+            "security": {
+              "detectionBatches": 4,
+              "fallbackBatches": 1,
+              "validationFallback": false,
+              "domainFallback": false,
+              "fallbackReason": null,
+              "model": "gemini-3.8-flash",
+              "degraded": true
+            }
+          }
+        },
         "issues": {
           "maintainability": {
             "all": 2,
@@ -341,6 +357,22 @@
           "totalP2": 2,
           "totalP3": 1,
           "analysisType": "system_gemini"
+        },
+        "provenance": {
+          "provider": "system_gemini",
+          "model": "gemini-3.8-flash",
+          "degraded": true,
+          "domains": {
+            "security": {
+              "detectionBatches": 4,
+              "fallbackBatches": 1,
+              "validationFallback": false,
+              "domainFallback": false,
+              "fallbackReason": null,
+              "model": "gemini-3.8-flash",
+              "degraded": true
+            }
+          }
         },
         "issues": {
           "maintainability": {
