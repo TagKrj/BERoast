@@ -130,8 +130,9 @@ const callGeminiJson = async ({ prompt, errorPrefix }) => {
 
   if (!response.ok) {
     const body = await readErrorBody(response);
+    console.error(`[llm] Gemini returned ${response.status}: ${body}`);
     throw new AppError(
-      `Gemini analysis failed with status ${response.status}. ${body}`,
+      `Gemini analysis failed with status ${response.status}.`,
       providerErrorStatusCode(response.status),
       `${errorPrefix}_GEMINI_FAILED`,
     );
@@ -222,8 +223,9 @@ const callOpenAIJson = async ({ prompt, openAiApiKey, errorPrefix }) => {
 
   if (!response.ok) {
     const body = await readErrorBody(response);
+    console.error(`[llm] OpenAI returned ${response.status}: ${body}`);
     throw new AppError(
-      `OpenAI analysis failed with status ${response.status}. ${body}`,
+      `OpenAI analysis failed with status ${response.status}.`,
       providerErrorStatusCode(response.status),
       `${errorPrefix}_OPENAI_FAILED`,
     );
