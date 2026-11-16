@@ -1,6 +1,6 @@
 import AppError from '../../utils/appError.js';
 
-const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
 const DEFAULT_OPENAI_MODEL = 'gpt-4o-mini';
 const LLM_RETRY_COUNT = Number.parseInt(process.env.LLM_RETRY_COUNT || '2', 10);
 const LLM_RETRY_DELAY_MS = Number.parseInt(
@@ -11,6 +11,22 @@ const LLM_REQUEST_TIMEOUT_MS = Number.parseInt(
   process.env.LLM_REQUEST_TIMEOUT_MS || '45000',
   10,
 );
+
+// Statuses that mean the server config is wrong, not that the provider is busy.
+const GEMINI_CONFIG_ERROR_STATUSES = [401, 403, 404];
+export const PROVIDER_MISCONFIGURED = 'AI_PROVIDER_MISCONFIGURED';
+
+export const isProviderConfigError = (error) =>
+  error?.code === PROVIDER_MISCONFIGURED;
+
+const providerMisconfigured = (detail) => {
+  console.error(`[llm] ${detail}`);
+  return new AppError(
+    'AI provider is misconfigured. Check the server logs.',
+    503,
+    PROVIDER_MISCONFIGURED,
+  );
+};
 
 export const resolveProviderModel = (provider) =>
   provider === 'user_openai'
@@ -66,11 +82,7 @@ const createTimeoutSignal = () => {
 
 const callGeminiJson = async ({ prompt, errorPrefix }) => {
   if (!process.env.GEMINI_API_KEY) {
-    throw new AppError(
-      'GEMINI_API_KEY is missing',
-      500,
-      'GEMINI_API_KEY_MISSING',
-    );
+    throw providerMisconfigured('GEMINI_API_KEY is missing.');
   }
 
   const model = resolveProviderModel('system_gemini');
@@ -126,6 +138,12 @@ const callGeminiJson = async ({ prompt, errorPrefix }) => {
     }
 
     await wait(LLM_RETRY_DELAY_MS * (attempt + 1));
+  }
+
+  if (GEMINI_CONFIG_ERROR_STATUSES.includes(response.status)) {
+    throw providerMisconfigured(
+      `Gemini rejected model "${model}" with status ${response.status}. Check GEMINI_API_KEY and GEMINI_ANALYSIS_MODEL.`,
+    );
   }
 
   if (!response.ok) {

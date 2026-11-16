@@ -1,4 +1,7 @@
-import { callProviderJson } from './llmClient.service.js';
+import {
+  callProviderJson,
+  isProviderConfigError,
+} from './llmClient.service.js';
 import {
   getCachedFileDetections,
   rulesContentHash,
@@ -176,6 +179,7 @@ ${JSON.stringify(rawDetections, null, 2)}
 
 const shouldUseBatchFallback = (provider, error) =>
   provider === 'system_gemini' &&
+  !isProviderConfigError(error) &&
   (error.statusCode >= 500 ||
     error.statusCode === 429 ||
     String(error.code || '').includes('GEMINI') ||
