@@ -21,30 +21,30 @@ Any agent or AI working in this repository should read the following in order:
 
 ## Current Codebase Status
 
-At the moment, `src/` is still a foundational skeleton without fully implemented business features. Current structure:
+The full analysis pipeline is implemented. Current structure:
 
 ```text
 src/
-├── app.js
-├── server.js
-├── config/
-│   └── db.js
-├── controllers/
-├── middlewares/
-│   └── error.middleware.js
-├── models/
-├── routes/
-└── services/
+├── app.js                  middleware, routes, error handler
+├── server.js               entry point, DB connect, Swagger UI
+├── config/                 db.js, swagger.js
+├── controllers/            auth, repo, roast
+├── middlewares/            auth (JWT), error
+├── models/                 user, repository, roastRun, roastIssue,
+│                           analysisUsage, analysisFileCache
+├── routes/                 auth, repo, roast
+├── services/
+│   ├── githubAuth.service.js   GitHub OAuth
+│   ├── githubRepo.service.js   repo tree, ignore rules, file selection
+│   ├── roast.service.js        check/analyze flow, quota, report shape
+│   ├── aiAnalysis.service.js   size classification, scoring, grading
+│   └── analysis/               per-domain detection -> validation pipeline
+└── utils/
 ```
 
-Meaning of this snapshot:
-
-* `src/app.js` is responsible for wiring middleware, routes, and the global error handler.
-* `src/server.js` is the application entry point.
-* `src/config/db.js` handles MongoDB connection logic.
-* `src/config/swagger.js` defines the OpenAPI document used by Swagger UI.
-* `src/middlewares/error.middleware.js` centralizes error handling.
-* `controllers`, `routes`, `models`, and `services` are architecture layers waiting for feature implementation.
+* The six analysis domains are declared in `src/services/analysis/analysisDomains.js`.
+* `docs/*_RULE_1.md` (detection) and `docs/*_RULE_2.md` (validation) are loaded at runtime as prompt input. Editing them changes analyser behaviour without a code change.
+* `docs/backend-response-contract.json` is the reference response shape.
 
 ## Required Architecture
 
@@ -143,7 +143,7 @@ The source currently uses `import/export`, so the repository must consistently f
 * Use `helmet`.
 * Use controlled `cors` origins.
 * Use `express-rate-limit` for public endpoints.
-* Hash passwords with `bcrypt`.
+* Sign-in is GitHub OAuth only; there are no passwords to store.
 * Use `jsonwebtoken` when authentication is needed.
 * Never hardcode secrets.
 
@@ -237,12 +237,13 @@ Current `package.json` scripts:
 
 * `npm run dev` -> runs `nodemon src/server.js`
 * `npm start` -> runs `node src/server.js`
+* `npm run db:init` -> creates collections and indexes in the `beroast` database
 
 ## API Docs
 
 Swagger UI is exposed from `server.js` at:
 
-* `http://localhost:5000/api-docs` by default
+* `http://localhost:5001/api-docs` with the `PORT` from `.env.example` (the code falls back to 5000 when `PORT` is unset)
 
 If you change `PORT`, the docs URL follows that port automatically.
 
@@ -252,23 +253,18 @@ Notes for Swagger testing:
 * Set `redirect=false` in Swagger UI. `redirect=true` is meant for direct browser navigation.
 * The docs now include example payloads and usage notes directly in the route files.
 
-Once the backend is fully bootstrapped, these two scripts should remain the standard execution paths.
-
 ## Environment Contract
 
-Minimum required environment variables:
+`.env.example` lists every variable. Required for a working local setup:
 
-* `MONGO_URI` - required for database connection.
-* `PORT` - HTTP server port, should have a default.
-* `CLIENT_ORIGIN` - frontend origin instead of hardcoding.
-* `NODE_ENV` - `development`, `test`, `production`.
-* `JWT_SECRET` - required when authentication is enabled.
+* `MONGO_URI` - the database name in the URI must be `beroast` (`db:init` targets it).
+* `JWT_SECRET` - e.g. `openssl rand -hex 32`.
+* `GITHUB_LOCAL_CLIENT_ID` / `GITHUB_LOCAL_CLIENT_SECRET` - a GitHub OAuth app with callback `http://localhost:5001/api/auth/github/callback`. Production uses `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET`.
+* `GEMINI_API_KEY` - the system analyser.
 
-Recommendations:
+Recommended: `GITHUB_TOKEN`, which raises the GitHub API limit from 60 to 5000 requests per hour.
 
-* Create a `.env.example`.
-* Never commit the real `.env`.
-* All secrets must live in environment variables.
+Never commit the real `.env`.
 
 ## Definition of Done
 
