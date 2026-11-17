@@ -67,7 +67,7 @@ const ANALYSIS_MAX_CONCURRENT = Number.parseInt(
   10,
 );
 
-const calculateScore = (domainFindings) => {
+export const calculateScore = (domainFindings) => {
   const penalty = analysisDomainValues().reduce((total, domain) => {
     const findings = domainFindings[domain.key] || [];
     const multiplier = domain.scorePenaltyMultiplier || 3;
@@ -82,7 +82,7 @@ const calculateScore = (domainFindings) => {
   return Math.max(0, 100 - penalty);
 };
 
-const gradeFromScore = (score) => {
+export const gradeFromScore = (score) => {
   if (score >= 90) return 'A';
   if (score >= 80) return 'B+';
   if (score >= 70) return 'B';

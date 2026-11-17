@@ -327,7 +327,7 @@ const isAllowedHiddenPath = (pathParts) =>
 const isExplicitReviewableFile = (filePath) =>
   REVIEWABLE_FILE_NAMES.has(getFileName(filePath));
 
-const isIgnoredRepositoryPath = (filePath) => {
+export const isIgnoredRepositoryPath = (filePath) => {
   if (!filePath) {
     return true;
   }
@@ -377,7 +377,7 @@ const isIgnoredRepositoryPath = (filePath) => {
   );
 };
 
-const isReviewableSourceFile = (file) => {
+export const isReviewableSourceFile = (file) => {
   if (file.type !== 'blob' || !file.path) {
     return false;
   }
@@ -415,7 +415,7 @@ const hasHighPriorityPath = (filePath) => {
 const hasLowPriorityPath = (filePath) =>
   pathSegments(filePath).some((segment) => LOW_PRIORITY_SEGMENTS.has(segment));
 
-const analysisPriorityScore = (file) => {
+export const analysisPriorityScore = (file) => {
   const filePath = file.path || '';
   const fileName = getFileName(filePath);
   const extension = getExtension(filePath);
